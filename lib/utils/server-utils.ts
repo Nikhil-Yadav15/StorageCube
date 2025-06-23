@@ -133,6 +133,7 @@ const verifyJWT = (req: {
   try {
     return jwt.verify(token, mongodbConfig.accessTokenSecret) as DecodedToken;
   } catch (error) {
+    console.log(error);
     throw new Error("Token verification failed");
   }
 };
@@ -143,6 +144,7 @@ const fetchCurrentUser = async (decodedToken: DecodedToken) => {
       .select("_id email fullName avatar")
       .lean();
   } catch (error) {
+    console.log(error);
     throw new Error("Failed to fetch user");
   }
 };
