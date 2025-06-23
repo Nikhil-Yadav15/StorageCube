@@ -4,6 +4,7 @@ import connectDB from "../../../../lib/dbConnection";
 
 export const POST = async (req) => {
   try {
+    
     await connectDB();
 
     const { email } = await req.json();
