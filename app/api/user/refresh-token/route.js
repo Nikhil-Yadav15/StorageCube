@@ -6,7 +6,7 @@ import { utils } from "../../../../lib/utils/server-utils";
 import { mongodbConfig } from "../../../../lib/dbConnection/config";
 import connectDB from "../../../../lib/dbConnection";
 
-export const POST = asyncHandler(async (req, _) => {
+export const POST = asyncHandler(async (req) => {
   const cookieStore = await cookies();
 
   const incomingRefreshToken =
@@ -69,7 +69,7 @@ export const POST = asyncHandler(async (req, _) => {
     });
   } catch (error) {
     utils.clearCookies(cookieStore);
-
+    console.log(error);
     return utils.responseHandler({
       message: "Something went wrong while refreshing access token!",
       status: 500,
