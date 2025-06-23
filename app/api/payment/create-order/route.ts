@@ -9,7 +9,7 @@ const razorpay = new Razorpay({
 export async function POST(request: Request) {
   try {
     const { amount, planId } = await request.json();
-
+    console.log(planId);
     const options = {
       amount,
       currency: "INR",
