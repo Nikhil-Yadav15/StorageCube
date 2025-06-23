@@ -9,7 +9,7 @@ cloudinary.config({
 });
 
 const uploadOnCloudinary = async (file: File) => {
-  // Upload an image
+  // Upload the file on Cloudinary
   try {
     if (!file) return null;
 
@@ -22,16 +22,16 @@ const uploadOnCloudinary = async (file: File) => {
     // Convert to Base64
     const base64Data = `data:${file.type};base64,${buffer.toString("base64")}`;
 
-    //upload the file on cloudinary
     const response = await cloudinary.uploader.upload(base64Data, {
       resource_type: "auto",
       public_id: originalFileName,
       folder: "cloud-store",
     });
-    // file has been uploaded successfull
-    console.log("file is uploaded on cloudinary ", response.url);
+
+    console.log("file is uploaded on cloudinary", response.url);
     return response;
   } catch (error) {
+    console.error("Cloudinary upload failed:", error);
     return null;
   }
 };
@@ -41,7 +41,7 @@ const deleteFromCloudinary = async (publicURL: string) => {
     const result = await cloudinary.uploader.destroy(publicURL);
     return result;
   } catch (error) {
-    console.log("error at cloudinarydelete function", error);
+    console.log("error at cloudinary delete function", error);
   }
 };
 
