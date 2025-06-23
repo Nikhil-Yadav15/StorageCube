@@ -4,7 +4,7 @@ import connectDB from "../../../../lib/dbConnection";
 import File from "../../../../lib/models/file.model";
 import mongoose from "mongoose";
 
-export const GET = asyncHandler(async (req, _) => {
+export const GET = asyncHandler(async (req) => {
   try {
     await connectDB();
     const decodedToken = utils.verifyJWT(req);
