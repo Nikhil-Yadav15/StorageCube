@@ -8,6 +8,11 @@
   ],
   "rules": {
     "no-undef": "off",
-    "no-unused-vars": "off"
+    "no-unused-vars": "off",
+
+    // Disable Tailwind-specific rules
+    "tailwindcss/classnames-order": "off",
+    "tailwindcss/no-custom-classname": "off",
+    "tailwindcss/enforces-shorthand": "off"
   }
 }
