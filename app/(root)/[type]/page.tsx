@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Card from "@/components/Card";
 import Sort from "@/components/Sort";
 import { getFileTypesParams } from "@/lib/utils/utils";
@@ -22,11 +22,7 @@ const Page = () => {
 
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchFiles();
-  }, [type, searchText, sort]);
-
-  const fetchFiles = async () => {
+  const fetchFiles = useCallback(async () => {
     const httpClient = createHttpClient();
     try {
       const response = await httpClient.get(
@@ -51,9 +47,12 @@ const Page = () => {
       });
     } catch (error) {
       console.log("Error fetching files:", error);
-    } finally {
     }
-  };
+  }, [types, searchText, sort, toast]); 
+
+  useEffect(() => {
+    fetchFiles();
+  }, [fetchFiles, type, searchText, sort]); 
 
   return (
     <div className="page-container">
@@ -72,7 +71,6 @@ const Page = () => {
         </div>
       </section>
 
-      {/* Render the files */}
       {files.total > 0 ? (
         <section className="file-list">
           {files.documents.map((file) => (
