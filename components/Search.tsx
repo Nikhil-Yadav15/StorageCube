@@ -16,9 +16,9 @@ const Search = () => {
   const sort = searchParams.get("sort") || "";
   const [query, setQuery] = useState(searchQuery);
   const [results, setResults] = useState<IDocument[]>([]);
-  const [cacheResults, setCacheResults] = useState<any>({});
+  const [cacheResults, setCacheResults] = useState<Record<string, IDocument[]>>({});
   const [open, setOpen] = useState(false);
-  const [initialized, setInitialized] = useState(false); // Tracks first-load behavior
+  const [initialized, setInitialized] = useState(false);
   const router = useRouter();
   const latestQuery = useRef("");
 
@@ -92,7 +92,7 @@ const Search = () => {
         setOpen(true);
       }
     } catch (error) {
-      console.log("Error fetching files:", error);
+      console.error("Error fetching files:", error);
     }
   };
 
