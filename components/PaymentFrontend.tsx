@@ -1,11 +1,8 @@
 "use client"
 
-// !Position the Upgrade button such that it appears completely in the center of the screen
-
 import { useEffect, useState } from "react"
 import { Star, CreditCard, Crown, Check } from "lucide-react"
 import { Button } from "./ui/button"
-import Razorpay from "razorpay"; 
 interface Plan {
   id: string
   name: string
@@ -50,9 +47,44 @@ const plans: Plan[] = [
   }
 ]
 
+
 declare global {
   interface Window {
-    Razorpay: any;
+    Razorpay: new (options: RazorpayOptions) => RazorpayInstance;
+  }
+
+  interface RazorpayInstance {
+    open(): void;
+    on(event: string, callback: (data: any) => void): void;
+  }
+
+  interface RazorpayOptions {
+    key: string;
+    amount: number;
+    currency: string;
+    name: string;
+    description: string;
+    image: string;
+    order_id: string;
+    handler: (response: {
+      razorpay_payment_id: string;
+      razorpay_order_id: string;
+      razorpay_signature: string;
+    }) => void;
+    prefill: {
+      name: string;
+      email: string;
+    };
+    theme: {
+      color: string;
+    };
+  }
+}
+
+
+declare global {
+  interface Window {
+    Razorpay: new (options: RazorpayOptions) => RazorpayInstance;
   }
 }
 
