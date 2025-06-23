@@ -1,23 +1,37 @@
+
 import crypto from "crypto";
-import type { NextApiRequest, NextApiResponse } from "next";
+import { NextResponse } from "next/server";
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== "POST") return res.status(405).end();
+export async function POST(request: Request) {
+  try {
+    const {
+      razorpay_order_id: razorpayOrderId,
+      razorpay_payment_id: razorpayPaymentId,
+      razorpay_signature: razorpaySignature,
+    } = await request.json();
 
-  const {
-  razorpay_order_id: razorpayOrderId,
-  razorpay_payment_id: razorpayPaymentId,
-  razorpay_signature: razorpaySignature,
-} = req.body;
+    if (!razorpayOrderId || !razorpayPaymentId || !razorpaySignature) {
+      return NextResponse.json(
+        { success: false, error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
 
-const generatedSignature = crypto
-  .createHmac("sha256", process.env.RAZORPAY_SECRET!)
-  .update(`${razorpayOrderId}|${razorpayPaymentId}`)
-  .digest("hex");
+    const generatedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_SECRET!)
+      .update(`${razorpayOrderId}|${razorpayPaymentId}`)
+      .digest("hex");
 
-if (generatedSignature === razorpaySignature) {
-  return res.status(200).json({ success: true });
-} else {
-  return res.status(400).json({ success: false });
-}
+    if (generatedSignature === razorpaySignature) {
+      return NextResponse.json({ success: true }, { status: 200 });
+    } else {
+      return NextResponse.json({ success: false }, { status: 400 });
+    }
+  } catch (error) {
+    console.error("Verification error:", error);
+    return NextResponse.json(
+      { success: false, error: "Internal server error" },
+      { status: 500 }
+    );
+  }
 }
