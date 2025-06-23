@@ -4,7 +4,6 @@ import { NextResponse } from "next/server";
 import { mongodbConfig } from "../dbConnection/config";
 import nodemailer from "nodemailer";
 
-// utils/responseHelper.js
 export function responseHandler({
   message = "",
   status,
@@ -50,8 +49,8 @@ export const generateAccessAndRefreshToken = async (userId: string) => {
 };
 
 const generateOtp = () => {
-  const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
-  const expiration = new Date(Date.now() + 10 * 60 * 1000); // OTP valid for 5 minutes
+  const otp = Math.floor(100000 + Math.random() * 900000).toString(); 
+  const expiration = new Date(Date.now() + 10 * 60 * 1000); 
   return { otp, expiration };
 };
 
@@ -70,29 +69,19 @@ const sendEmailOTP = async (email: string, firstName: string) => {
   const { otp, expiration } = generateOtp();
 
   try {
-    // const transporter = nodemailer.createTransport({
-    //   service: "gmail",
-    //   auth: {
-    //     user: mongodbConfig.gmailUser,
-    //     pass: mongodbConfig.gmailPassword,
-    //   },
-    // });
-
     const transporter = nodemailer.createTransport({
       host: "smtp.zoho.in",
       port: 465,
       secure: true,
-      debug: true, // Add this for detailed logs
-      logger: true, // Add this for detailed logs
+      debug: true,
+      logger: true,
       auth: {
-        user: "node25mail@zohomail.in",
-        pass: "eypYxrHZUpFd",
+       user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_PASS,
       },
     });
-
-    // Email content
     const mailOptions = {
-      from: "StorageCube <node25mail@zohomail.in>",
+      from: `StorageCube <${process.env.GMAIL_USER}>`,
       to: email,
       subject: "Your OTP Code",
       text: `Your OTP is ${otp}`,
