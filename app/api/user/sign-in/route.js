@@ -2,7 +2,7 @@ import User from "../../../../lib/models/user.model";
 import { utils } from "../../../../lib/utils/server-utils";
 import connectDB from "../../../../lib/dbConnection";
 
-export const POST = async (req, _) => {
+export const POST = async (req) => {
   try {
     await connectDB();
 
@@ -15,6 +15,7 @@ export const POST = async (req, _) => {
         success: false,
       });
     }
+
     const user = await User.findOne({ email });
 
     if (!user) {
@@ -34,6 +35,7 @@ export const POST = async (req, _) => {
         success: false,
       });
     }
+
     const { otp, expiration } = otpDetails;
 
     const updatedUser = await User.findOneAndUpdate(
