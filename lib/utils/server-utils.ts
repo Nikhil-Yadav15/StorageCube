@@ -125,11 +125,29 @@ const sendEmailOTP = async (email: string, firstName: string) => {
 //   });
 // };
 
-export const clearCookies = () => {
-  const cookieStore = cookies();
-  
-  cookieStore.delete("accessToken");
-  cookieStore.delete("refreshToken");
+const clearCookies = () => {
+  try {
+    // For API routes and server components
+    const cookieStore = cookies();
+    
+    // Type guard to check if delete method exists
+    if ('delete' in cookieStore) {
+      cookieStore.delete("accessToken");
+      cookieStore.delete("refreshToken");
+    } else {
+      // Fallback for environments where delete isn't available
+      cookieStore.set("accessToken", "", { 
+        expires: new Date(0),
+        path: "/",
+      });
+      cookieStore.set("refreshToken", "", {
+        expires: new Date(0),
+        path: "/",
+      });
+    }
+  } catch (error) {
+    console.error("Error clearing cookies:", error);
+  }
 };
 
 
