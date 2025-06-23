@@ -23,12 +23,17 @@ import { Button } from "@/components/ui/button";
 import { FileDetails, ShareInput } from "@/components/ActionsModalContent";
 import { utils } from "@/lib/utils/utils";
 import { useToast } from "@/hooks/use-toast";
-import { Loader } from "@/public/assets";
 
 interface Props {
   file: IDocument;
   fetchFiles: () => Promise<void>;
 }
+
+type ActionType = {
+  value: string;
+  label: string;
+  icon: string;
+};
 
 const ActionDropdown = ({ file, fetchFiles }: Props) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -50,81 +55,96 @@ const ActionDropdown = ({ file, fetchFiles }: Props) => {
     if (!action) return;
     setIsLoading(true);
 
-    const actions = {
-      rename: async () => await utils.renameFile(file._id, name),
-      share: async () => await utils.updateFileUsers(file._id, emails),
-      delete: async () => await utils.deleteFile(file._id),
-    };
+    try {
+      let response;
+      switch (action.value) {
+        case "rename":
+          response = await utils.renameFile(file._id, name);
+          break;
+        case "share":
+          response = await utils.updateFileUsers(file._id, emails);
+          break;
+        case "delete":
+          response = await utils.deleteFile(file._id);
+          break;
+        default:
+          throw new Error("Invalid action");
+      }
 
-    const response = await actions[action.value as keyof typeof actions]();
+      if (response.status !== 200) {
+        throw new Error(response?.message || "Something went wrong");
+      }
 
-    if (response.status !== 200) {
-      setIsLoading(false);
       closeAllModals();
-
-      return toast({
+      await fetchFiles();
+    } catch (error) {
+      toast({
         description: (
           <p className="body-2 text-white">
-            {response?.message || `Something went wrong`}
+            {error instanceof Error ? error.message : "Something went wrong"}
           </p>
         ),
         className: "error-toast",
       });
+    } finally {
+      setIsLoading(false);
     }
-
-    closeAllModals();
-    fetchFiles && fetchFiles();
-    setIsLoading(false);
   };
 
   const handleRemoveUser = async (email: string) => {
-    const success = await utils.updateFileUsers(file._id, email);
+    try {
+      await utils.updateFileUsers(file._id, email);
+      await fetchFiles();
+    } catch (error) {
+      console.error("Failed to remove user:", error);
+    }
+  };
 
-    if (success) {
-      fetchFiles && fetchFiles();
+  const handleActionClick = (actionItem: ActionType) => {
+    setAction(actionItem);
+    if (["rename", "share", "delete", "details"].includes(actionItem.value)) {
+      setIsModalOpen(true);
     }
   };
 
   const renderDialogContent = () => {
     if (!action) return null;
 
-    const { value, label } = action;
-
     return (
       <DialogContent className="shad-dialog button">
         <DialogHeader className="flex flex-col gap-3">
           <DialogTitle className="text-center text-light-100">
-            {label}
+            {action.label}
           </DialogTitle>
-          {value === "rename" && (
+          {action.value === "rename" && (
             <Input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
           )}
-          {value === "details" && <FileDetails file={file} />}
-          {value === "share" && (
+          {action.value === "details" && <FileDetails file={file} />}
+          {action.value === "share" && (
             <ShareInput
               file={file}
               onInputChange={setEmails}
               onRemove={handleRemoveUser}
             />
           )}
-          {value === "delete" && (
+          {action.value === "delete" && (
             <p className="delete-confirmation">
-              Are you sure you want to delete{` `}
+              Are you sure you want to delete{" "}
               <span className="delete-file-name">{file.name}</span>?
             </p>
           )}
         </DialogHeader>
-        {["rename", "delete", "share"].includes(value) && (
+        {["rename", "delete", "share"].includes(action.value) && (
           <DialogFooter className="flex flex-col gap-3 md:flex-row">
             <Button onClick={closeAllModals} className="modal-cancel-button">
               Cancel
             </Button>
             <Button onClick={handleAction} className="modal-submit-button">
-              <p className="capitalize">{value}</p>
+              <p className="capitalize">{action.value}</p>
               {isLoading && (
                 <Image
                   src="/assets/icons/loader.svg"
@@ -161,17 +181,7 @@ const ActionDropdown = ({ file, fetchFiles }: Props) => {
             <DropdownMenuItem
               key={actionItem.value}
               className="shad-dropdown-item"
-              onClick={() => {
-                setAction(actionItem);
-
-                if (
-                  ["rename", "share", "delete", "details"].includes(
-                    actionItem.value
-                  )
-                ) {
-                  setIsModalOpen(true);
-                }
-              }}
+              onClick={() => handleActionClick(actionItem)}
             >
               {actionItem.value === "download" ? (
                 <Link
@@ -202,9 +212,9 @@ const ActionDropdown = ({ file, fetchFiles }: Props) => {
           ))}
         </DropdownMenuContent>
       </DropdownMenu>
-
       {renderDialogContent()}
     </Dialog>
   );
 };
+
 export default ActionDropdown;
