@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/sheet";
 import Image from "next/image";
 import React, { useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Separator } from "@radix-ui/react-separator";
 import { navItems } from "@/constants";
 import Link from "next/link";
@@ -20,10 +20,9 @@ import { useProfileContext } from "@/context/ProfileContext";
 import { createHttpClient } from "@/tools/httpClient";
 import { apiUrls } from "@/tools/apiUrls";
 import { localStorageService } from "@/services/LocalStorage.service";
-import { useRouter } from "next/navigation";
 import PlanPopup from "./PaymentFrontend";
 
-const MobileNavigation = ({}) => {
+const MobileNavigation = () => {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
