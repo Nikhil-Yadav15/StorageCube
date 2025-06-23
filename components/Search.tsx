@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState, useCallback } from "react";
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -22,6 +22,34 @@ const Search = () => {
   const latestQuery = useRef("");
 
   const handleFocus = () => setOpen(true);
+
+  const fetchFiles = useCallback(async (currentQuery: string) => {
+    const httpClient = createHttpClient();
+
+    try {
+      const response = await httpClient.get(
+        `${apiUrls.getFile}/all?searchText=${currentQuery}`
+      );
+
+      if (!response || response.status !== 200) {
+        throw new Error("Failed to fetch files");
+      }
+
+      if (latestQuery.current !== currentQuery) return;
+
+      setResults(response.data.files);
+      setCacheResults(prev => ({
+        ...prev,
+        [currentQuery]: response.data.files,
+      }));
+
+      if (initialized) {
+        setOpen(true);
+      }
+    } catch (error) {
+      console.error("Error fetching files:", error);
+    }
+  }, [initialized]);
 
   useEffect(() => {
     const handleBlur = () => {
@@ -68,34 +96,6 @@ const Search = () => {
       if (timer) clearTimeout(timer);
     };
   }, [query, cacheResults, initialized, fetchFiles]);
-
-  const fetchFiles = async (currentQuery: string) => {
-    const httpClient = createHttpClient();
-
-    try {
-      const response = await httpClient.get(
-        `${apiUrls.getFile}/all?searchText=${currentQuery}`
-      );
-
-      if (!response || response.status !== 200) {
-        throw new Error("Failed to fetch files");
-      }
-
-      if (latestQuery.current !== currentQuery) return;
-
-      setResults(response.data.files);
-      setCacheResults(prev => ({
-        ...prev,
-        [currentQuery]: response.data.files,
-      }));
-
-      if (initialized) {
-        setOpen(true);
-      }
-    } catch (error) {
-      console.error("Error fetching files:", error);
-    }
-  };
 
   const handleClickItem = (file: IDocument) => {
     setOpen(false);
