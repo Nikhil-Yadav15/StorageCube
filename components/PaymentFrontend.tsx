@@ -113,7 +113,7 @@ export default function PlanPopup() {
                     <p className="text-center text-gray-700 mb-1 text-2xl font-bold">
                       ₹{plan.price}
                       {plan.price > 0 && (
-                        <span className="text-sm font-normal"> /mo</span>
+                        <span className="text-sm font-normal"></span>
                       )}
                     </p>
                     <p className="text-center text-sm text-blue-600 mb-4">
