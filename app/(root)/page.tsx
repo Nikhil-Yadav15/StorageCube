@@ -106,7 +106,7 @@ const Dashboard = () => {
                     className="h-10 w-10"
                   />
                   <h4 className="text-lg font-medium">
-                    {convertFileSize(summary.size) || 0}
+                    {convertFileSize(summary.size ?? 0) || 0}
                   </h4>
                 </div>
 
