@@ -2,7 +2,7 @@ import User from "../../../../lib/models/user.model";
 import { utils } from "../../../../lib/utils/server-utils";
 import connectDB from "../../../../lib/dbConnection";
 
-export const POST = async (req, _) => {
+export const POST = async (req) => {
   try {
     await connectDB();
     const { email } = await req.json();
