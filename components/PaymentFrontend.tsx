@@ -4,39 +4,6 @@ import { useEffect, useState } from "react";
 import { Star, CreditCard, Crown, Check } from "lucide-react";
 import { Button } from "./ui/button";
 
-interface RazorpayOptions {
-  key: string;
-  amount: number;
-  currency: string;
-  name: string;
-  description: string;
-  image: string;
-  order_id: string;
-  handler: (response: {
-    razorpay_payment_id: string;
-    razorpay_order_id: string;
-    razorpay_signature: string;
-  }) => void;
-  prefill: {
-    name: string;
-    email: string;
-  };
-  theme: {
-    color: string;
-  };
-}
-
-interface RazorpayInstance {
-  open(): void;
-  on(event: string, callback: (data: unknown) => void): void;
-}
-
-declare global {
-  interface Window {
-    Razorpay: new (options: RazorpayOptions) => RazorpayInstance;
-  }
-}
-
 interface Plan {
   id: string;
   name: string;
@@ -83,55 +50,12 @@ const plans: Plan[] = [
 
 const handleUpgrade = async (plan: Plan) => {
   try {
-    const res = await fetch("/api/payment/create-order", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        amount: plan.price * 100,
-        planId: plan.id,
-      }),
-    });
+    if (plan.name.toLowerCase() === "standard") {
+      window.location.href = process.env.NEXT_PUBLIC_STRIPE_PAYMENT_URL_STD!;
+    } else if (plan.name.toLowerCase() === "pro") {
+      window.location.href = process.env.NEXT_PUBLIC_STRIPE_PAYMENT_URL_PRO!;
+    }
 
-    const data = await res.json();
-
-    if (!data.orderId || !data.key) throw new Error("Order not created");
-
-    const options: RazorpayOptions = {
-      key: data.key,
-      amount: data.amount,
-      currency: data.currency,
-      name: "StorageCube",
-      description: `Upgrade to ${plan.name}`,
-      image: "/logo.png",
-      order_id: data.orderId,
-      handler: async function (response) {
-        const verifyRes = await fetch("/api/payment/verify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            ...response,
-            planId: plan.id,
-          }),
-        });
-
-        const result = await verifyRes.json();
-        if (result.success) {
-          alert("Payment successful! Plan upgraded.");
-        } else {
-          alert("Payment verification failed.");
-        }
-      },
-      prefill: {
-        name: "Nikhil Yadav",
-        email: "nikhil@example.com",
-      },
-      theme: {
-        color: "#6366f1",
-      },
-    };
-
-    const razor = new window.Razorpay(options);
-    razor.open();
   } catch (error) {
     console.error("Upgrade failed", error);
   }
