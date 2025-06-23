@@ -3,8 +3,7 @@ import User from "../models/user.model";
 import { NextResponse } from "next/server";
 import { mongodbConfig } from "../dbConnection/config";
 import nodemailer from "nodemailer";
-import { RequestCookies } from "next/dist/compiled/@edge-runtime/cookies";
-import { cookies } from "next/headers"; 
+import { ResponseCookies } from 'next/dist/compiled/@edge-runtime/cookies';
 
 type ResponseHandlerProps = {
   message: string;
@@ -103,48 +102,27 @@ const sendEmailOTP = async (email: string, firstName: string) => {
   }
 };
 
-// const clearCookies = (cookieStore: RequestCookies) => {
-//   cookieStore.set({
-//     name: "accessToken",
-//     value: "",
-//     path: "/",
-//     httpOnly: true,
-//     secure: true,
-//     sameSite: "strict",
-//     expires: new Date(0),
-//   });
+// Import the proper types
 
-//   cookieStore.set({
-//     name: "refreshToken",
-//     value: "",
-//     path: "/",
-//     httpOnly: true,
-//     secure: true,
-//     sameSite: "strict",
-//     expires: new Date(0),
-//   });
-// };
 
 const clearCookies = () => {
   try {
-    // For API routes and server components
     const cookieStore = cookies();
+    cookieStore.set("accessToken", "", { 
+      expires: new Date(0),
+      path: "/",
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+    });
     
-    // Type guard to check if delete method exists
-    if ('delete' in cookieStore) {
-      cookieStore.delete("accessToken");
-      cookieStore.delete("refreshToken");
-    } else {
-      // Fallback for environments where delete isn't available
-      cookieStore.set("accessToken", "", { 
-        expires: new Date(0),
-        path: "/",
-      });
-      cookieStore.set("refreshToken", "", {
-        expires: new Date(0),
-        path: "/",
-      });
-    }
+    cookieStore.set("refreshToken", "", {
+      expires: new Date(0),
+      path: "/",
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+    });
   } catch (error) {
     console.error("Error clearing cookies:", error);
   }
