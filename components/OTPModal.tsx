@@ -21,7 +21,6 @@ import { useRouter } from "next/navigation";
 import { createHttpClient } from "@/tools/httpClient";
 import { localStorageService } from "@/services/LocalStorage.service";
 import { apiUrls } from "@/tools/apiUrls";
-import { utils } from "@/lib/utils/server-utils";
 import { useToast } from "@/hooks/use-toast";
 interface Props {
   email: string;
@@ -112,8 +111,8 @@ const OTPModal = ({ email }: Props) => {
             />
           </AlertDialogTitle>
           <AlertDialogDescription className="subtitle-2 text-center text-light-100">
-            We've sent a code to{" "}
-            <span className="pl-1 text-brand">{email || "test@gmail.com"}</span>
+            We&apos;ve sent a code to{" "}
+            <span className="pl-1 text-emerald-500">{email || "test@gmail.com"}</span>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <InputOTP maxLength={6} value={password} onChange={setPassword}>
@@ -144,8 +143,8 @@ const OTPModal = ({ email }: Props) => {
                 />
               )}
             </AlertDialogAction>
-            <div className="subtitle-2 mt-2 text-center text-light-100">
-              Didn't receive the code?
+            <div className="subtitle-2 mt-2 text-center text-red">
+              Didn&apos;t receive the code?
               <Button
                 type="button"
                 onClick={onResendOTP}
