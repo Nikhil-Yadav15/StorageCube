@@ -61,13 +61,13 @@ const Search = () => {
         setOpen(true);
       }
     } else {
-      timer = setTimeout(() => void fetchFiles(query), 200);
+      timer = setTimeout(() => fetchFiles(query), 200);
     }
 
     return () => {
       if (timer) clearTimeout(timer);
     };
-  }, [query, cacheResults, initialized]);
+  }, [query, cacheResults, initialized, fetchFiles]);
 
   const fetchFiles = async (currentQuery: string) => {
     const httpClient = createHttpClient();
