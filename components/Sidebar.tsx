@@ -6,13 +6,11 @@ import { Files2, LogoBrand } from "@/public/assets";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Button } from "@/components/ui/button";
-// import PlanPopup from "@/components/PaymentFrontend";
+
 import { useState } from "react";
 
 
 const Sidebar = () => {
-  const [showPayment, setShowPayment] = useState(false);
   const pathname = usePathname();
   const {
     profile: { fullName, avatar, email },
@@ -20,8 +18,6 @@ const Sidebar = () => {
 
   return (
     <aside className="sidebar">
-      {/* {showPayment && 
-      } */}
       <Link href="/">
         <div className="hidden h-auto lg:flex items-center space-x-0">
           <Image
@@ -70,7 +66,6 @@ const Sidebar = () => {
           ))}
         </ul>
         <div className="mt-6 sidebar-nav-item">
-          {/* <Button onClick={() => setShowPayment(true)} className="bg-gradient-to-r from-yellow-300 to-orange-300 text-white px-4 py-2  shadow-md hover:opacity-90 w-full rounded-full">Upgrade Storage</Button> */}
         </div>
       </nav>
       <Image
