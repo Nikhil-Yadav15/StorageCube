@@ -142,7 +142,7 @@ const fetchCurrentUser = async (decodedToken: DecodedToken) => {
     return await User.findById(decodedToken._id)
       .select("_id email fullName avatar")
       .lean();
-  } catch {
+  } catch (error) {
     throw new Error("Failed to fetch user");
   }
 };
