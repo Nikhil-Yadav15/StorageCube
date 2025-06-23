@@ -8,7 +8,7 @@ import { FormattedDateTime } from "@/components/FormattedDateTime";
 import Thumbnail from "@/components/Thumbnail";
 import { Separator } from "@/components/ui/separator";
 import { convertFileSize, getUsageSummary } from "@/lib/utils/utils";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { createHttpClient } from "@/tools/httpClient";
 import { apiUrls } from "@/tools/apiUrls";
 import { useToast } from "@/hooks/use-toast";
@@ -26,7 +26,12 @@ const Dashboard = () => {
 
   const { toast } = useToast();
 
-  const fetchFiles = useCallback(async () => {
+  useEffect(() => {
+    fetchFiles();
+    fetchTotalSpaceUsed();
+  }, []);
+
+  const fetchFiles = async () => {
     const httpClient = createHttpClient();
     try {
       const response = await httpClient.get(`${apiUrls.getFile}/all?limit=10`);
@@ -34,7 +39,7 @@ const Dashboard = () => {
       if (!response || response.status !== 200) {
         toast({
           description: (
-            <p className="text-white body-2">
+            <p className="body-2 text-white">
               {response?.message ||
                 `Something went wrong while fetching recent files`}
             </p>
@@ -49,18 +54,18 @@ const Dashboard = () => {
         total: response.data.total,
       });
     } catch (error) {
-      console.error("Error fetching files:", error);
+      console.log("Error fetching files:", error);
     }
-  }, [toast]);
+  };
 
-  const fetchTotalSpaceUsed = useCallback(async () => {
+  const fetchTotalSpaceUsed = async () => {
     const httpClient = createHttpClient();
     try {
       const response = await httpClient.get(apiUrls.getTotalSpaceUsed);
       if (!response || response.status !== 200) {
         toast({
           description: (
-            <p className="text-white body-2">
+            <p className="body-2 text-white">
               {response?.message ||
                 `Something went wrong while fetching total space used`}
             </p>
@@ -71,16 +76,10 @@ const Dashboard = () => {
       }
       setTotalSpace(response.data.totalSpace);
     } catch (error) {
-      console.error("Error fetching total space used:", error);
+      console.log("Error fetching files:", error);
     }
-  }, [toast]);
+  };
 
-  useEffect(() => {
-    fetchFiles();
-    fetchTotalSpaceUsed();
-  }, [fetchFiles, fetchTotalSpaceUsed]);
-
-  // Get usage summary
   const usageSummary = getUsageSummary(totalSpace);
 
   return (
@@ -88,13 +87,12 @@ const Dashboard = () => {
       <section>
         <Chart used={totalSpace.used} />
 
-        {/* Uploaded file type summaries */}
-        <ul className="flex flex-wrap gap-5">
+        <ul className="dashboard-summary-list">
           {usageSummary.map((summary) => (
             <Link
               href={summary.url}
               key={summary.title}
-              className="glass-card-hover w-full min-w-[200px] max-w-[300px] rounded-lg p-4 shadow-md transition-all hover:shadow-lg"
+              className="dashboard-summary-card"
             >
               <div className="space-y-4">
                 <div className="flex justify-between gap-3">
@@ -103,18 +101,18 @@ const Dashboard = () => {
                     width={100}
                     height={100}
                     alt="uploaded image"
-                    className="h-10 w-10"
+                    className="summary-type-icon"
                   />
-                  <h4 className="text-lg font-medium">
-                    {convertFileSize(summary.size ?? 0) || 0}
+                  <h4 className="summary-type-size">
+                    {convertFileSize(summary.size) || 0}
                   </h4>
                 </div>
 
-                <h5 className="text-xl font-semibold">{summary.title}</h5>
+                <h5 className="summary-type-title">{summary.title}</h5>
                 <Separator className="bg-light-400" />
                 <FormattedDateTime
-                  date={summary.latestDate ?? ""}
-                  className="text-center text-sm"
+                  date={summary.latestDate}
+                  className="text-center"
                 />
               </div>
             </Link>
@@ -122,9 +120,8 @@ const Dashboard = () => {
         </ul>
       </section>
 
-      {/* Recent files uploaded */}
-      <section className="mt-10">
-        <h2 className="h2 text-light-100">Recent files uploaded</h2>
+      <section className="dashboard-recent-files">
+        <h2 className="h3 xl:h2 text-light-100">Recent files uploaded</h2>
         {files.documents.length > 0 ? (
           <ul className="mt-5 flex flex-col gap-5">
             {files.documents.map((file) => (
@@ -139,12 +136,12 @@ const Dashboard = () => {
                   extension={file.extension}
                   url={file.url}
                 />
-                <div className="flex flex-1 items-center justify-between">
+                <div className="recent-file-details">
                   <div className="flex flex-col gap-1">
-                    <p className="text-base font-medium">{file.name}</p>
+                    <p className="recent-file-name">{file.name}</p>
                     <FormattedDateTime
                       date={file.createdAt}
-                      className="text-sm text-gray-500"
+                      className="caption"
                     />
                   </div>
                   <ActionDropdown file={file} fetchFiles={fetchFiles} />
@@ -153,7 +150,7 @@ const Dashboard = () => {
             ))}
           </ul>
         ) : (
-          <p className="py-10 text-center text-gray-500">No files uploaded</p>
+          <p className="empty-list">No files uploaded</p>
         )}
       </section>
     </div>
