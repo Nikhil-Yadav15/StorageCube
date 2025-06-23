@@ -104,7 +104,7 @@ const Dashboard = () => {
                     className="summary-type-icon"
                   />
                   <h4 className="summary-type-size">
-                    {convertFileSize(summary.size) || 0}
+                    {convertFileSize(summary.size ?? 0)}
                   </h4>
                 </div>
 
