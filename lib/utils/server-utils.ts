@@ -1,20 +1,28 @@
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import User from "../models/user.model";
 import { NextResponse } from "next/server";
 import { mongodbConfig } from "../dbConnection/config";
 import nodemailer from "nodemailer";
+import { RequestCookies } from "next/dist/compiled/@edge-runtime/cookies";
+
+type ResponseHandlerProps = {
+  message: string;
+  status: number;
+  success?: boolean;
+  data?: Record<string, unknown>;
+};
+
+type DecodedToken = JwtPayload & {
+  _id: string;
+  email?: string;
+};
 
 export function responseHandler({
   message = "",
   status,
   success = true,
   data = {},
-}: {
-  message: string;
-  status: number;
-  success?: boolean;
-  data?: any;
-}) {
+}: ResponseHandlerProps) {
   return NextResponse.json(
     {
       message,
@@ -28,41 +36,40 @@ export function responseHandler({
 export const generateAccessAndRefreshToken = async (userId: string) => {
   try {
     const user = await User.findById(userId);
+    if (!user) throw new Error("User not found");
+
     const accessToken = user.generateAccessToken();
     const refreshToken = user.generateRefreshToken();
 
     user.refreshToken = refreshToken;
-    user.save({ validateBeforeSave: false });
+    await user.save({ validateBeforeSave: false });
 
     return { accessToken, refreshToken };
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       {
-        message:
-          "Something went wrong while generating refresh and access token",
+        message: "Something went wrong while generating tokens",
       },
-      {
-        status: 500,
-      }
+      { status: 500 }
     );
   }
 };
 
 const generateOtp = () => {
-  const otp = Math.floor(100000 + Math.random() * 900000).toString(); 
-  const expiration = new Date(Date.now() + 10 * 60 * 1000); 
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiration = new Date(Date.now() + 10 * 60 * 1000);
   return { otp, expiration };
 };
 
 const emailTemplate = (firstName: string, otp: string) => {
   return `<div style="font-family: Arial, sans-serif; line-height: 1.5; color: #333;">
-            <p>Hello, ${firstName}!</p>
-            <p>Enter the following verification code if prompted to securely sign-in/sign-up to your account. This code is valid for 10 minutes.</p>
-            <div style="border: 1px solid #ccc; padding: 10px; margin: 20px 0; display: inline-block; text-align: center; font-size: 1.5em; font-weight: bold; color: #333;">
-              ${otp.split("").join(" ")}
-            </div>
-            <p>If you did not request this code, please ignore this email.</p>
-          </div>`;
+    <p>Hello, ${firstName}!</p>
+    <p>Enter the following verification code. This code is valid for 10 minutes.</p>
+    <div style="border: 1px solid #ccc; padding: 10px; margin: 20px 0; display: inline-block; text-align: center; font-size: 1.5em; font-weight: bold;">
+      ${otp.split("").join(" ")}
+    </div>
+    <p>If you did not request this code, please ignore this email.</p>
+  </div>`;
 };
 
 const sendEmailOTP = async (email: string, firstName: string) => {
@@ -73,13 +80,12 @@ const sendEmailOTP = async (email: string, firstName: string) => {
       host: "smtp.zoho.in",
       port: 465,
       secure: true,
-      debug: true,
-      logger: true,
       auth: {
-       user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_PASS,
+        user: process.env.GMAIL_USER!,
+        pass: process.env.GMAIL_PASS!,
       },
     });
+
     const mailOptions = {
       from: `StorageCube <${process.env.GMAIL_USER}>`,
       to: email,
@@ -96,7 +102,7 @@ const sendEmailOTP = async (email: string, firstName: string) => {
   }
 };
 
-const clearCookies = (cookieStore: any) => {
+const clearCookies = (cookieStore: RequestCookies) => {
   cookieStore.set("accessToken", "", {
     path: "/",
     httpOnly: true,
@@ -114,26 +120,30 @@ const clearCookies = (cookieStore: any) => {
   });
 };
 
-const verifyJWT = (req: any) => {
+const verifyJWT = (req: {
+  cookies?: RequestCookies;
+  headers?: Headers;
+}) => {
   const token =
     req.cookies?.get("accessToken")?.value ||
-    req.headers?.authorization?.replace("Bearer ", "");
+    req.headers?.get("Authorization")?.replace("Bearer ", "");
 
   if (!token) throw new Error("Authorization token is missing");
+
   try {
-    return jwt.verify(token, mongodbConfig.accessTokenSecret);
-  } catch (error: any) {
-    throw new Error("Token verification failed: " + error.message);
+    return jwt.verify(token, mongodbConfig.accessTokenSecret) as DecodedToken;
+  } catch (error) {
+    throw new Error("Token verification failed");
   }
 };
 
-const fetchCurrentUser = async (decodedToken: any) => {
+const fetchCurrentUser = async (decodedToken: DecodedToken) => {
   try {
     return await User.findById(decodedToken._id)
       .select("_id email fullName avatar")
       .lean();
-  } catch (error: any) {
-    throw new Error("Failed to fetch user: " + error.message);
+  } catch {
+    throw new Error("Failed to fetch user");
   }
 };
 
@@ -143,5 +153,5 @@ export const utils = {
   clearCookies,
   verifyJWT,
   fetchCurrentUser,
-  sendEmailOTP
+  sendEmailOTP,
 };
