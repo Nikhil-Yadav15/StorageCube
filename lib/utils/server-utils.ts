@@ -3,7 +3,6 @@ import User from "../models/user.model";
 import { NextResponse } from "next/server";
 import { mongodbConfig } from "../dbConnection/config";
 import nodemailer from "nodemailer";
-import { ResponseCookies } from 'next/dist/compiled/@edge-runtime/cookies';
 
 type ResponseHandlerProps = {
   message: string;
