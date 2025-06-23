@@ -3,7 +3,7 @@ import User from "../models/user.model";
 import { NextResponse } from "next/server";
 import { mongodbConfig } from "../dbConnection/config";
 import nodemailer from "nodemailer";
-
+import { cookies } from "next/headers"; 
 type ResponseHandlerProps = {
   message: string;
   status: number;
