@@ -9,7 +9,6 @@ import FormattedDateTime from "@/components/FormattedDateTime";
 import { createHttpClient } from "@/tools/httpClient";
 import { apiUrls } from "@/tools/apiUrls";
 
-
 const Search = () => {
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get("query") || "";
@@ -31,10 +30,11 @@ const Search = () => {
       }, 250);
     };
 
-    const searchBar = document.getElementById("searchbar") as HTMLElement;
-    searchBar.addEventListener("blur", handleBlur);
-
-    return () => searchBar.removeEventListener("blur", handleBlur);
+    const searchBar = document.getElementById("searchbar");
+    if (searchBar) {
+      searchBar.addEventListener("blur", handleBlur);
+      return () => searchBar.removeEventListener("blur", handleBlur);
+    }
   }, [open]);
 
   useEffect(() => {
@@ -61,11 +61,13 @@ const Search = () => {
         setOpen(true);
       }
     } else {
-      timer = setTimeout(() => fetchFiles(query), 200);
+      timer = setTimeout(() => void fetchFiles(query), 200);
     }
 
-    return () => clearTimeout(timer);
-  }, [query]);
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [query, cacheResults, initialized]);
 
   const fetchFiles = async (currentQuery: string) => {
     const httpClient = createHttpClient();
@@ -79,14 +81,13 @@ const Search = () => {
         throw new Error("Failed to fetch files");
       }
 
-      // Ensure the response is for the latest query
       if (latestQuery.current !== currentQuery) return;
 
       setResults(response.data.files);
-      setCacheResults({
-        ...cacheResults,
+      setCacheResults(prev => ({
+        ...prev,
         [currentQuery]: response.data.files,
-      });
+      }));
 
       if (initialized) {
         setOpen(true);
@@ -117,7 +118,7 @@ const Search = () => {
           alt="Search"
           width={24}
           height={24}
-          />
+        />
         <Input
           id="searchbar"
           value={query}
@@ -125,11 +126,10 @@ const Search = () => {
           className="search-input"
           onChange={handleInputChange}
           onFocus={handleFocus}
-          />
+        />
 
         {open && (
           <ul className="search-result max-h-[400px] overflow-y-scroll">
-            
             {results.length > 0 ? (
               results.map((file) => (
                 <li
@@ -161,7 +161,6 @@ const Search = () => {
           </ul>
         )}
       </div>
-
     </div>
   );
 };
