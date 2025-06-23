@@ -6,7 +6,7 @@ import { utils } from "../../../../lib/utils/server-utils";
 import connectDB from "../../../../lib/dbConnection";
 
 export const POST = asyncHandler(
-  verifyJWT(async (req, _) => {
+  verifyJWT(async (req) => {
     try {
       await connectDB();
 
