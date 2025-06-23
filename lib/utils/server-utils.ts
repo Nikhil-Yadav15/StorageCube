@@ -103,7 +103,9 @@ const sendEmailOTP = async (email: string, firstName: string) => {
 };
 
 const clearCookies = (cookieStore: RequestCookies) => {
-  cookieStore.set("accessToken", "", {
+  cookieStore.set({
+    name: "accessToken",
+    value: "",
     path: "/",
     httpOnly: true,
     secure: true,
@@ -111,7 +113,9 @@ const clearCookies = (cookieStore: RequestCookies) => {
     maxAge: 0,
   });
 
-  cookieStore.set("refreshToken", "", {
+  cookieStore.set({
+    name: "refreshToken",
+    value: "",
     path: "/",
     httpOnly: true,
     secure: true,
