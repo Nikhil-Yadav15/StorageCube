@@ -113,7 +113,7 @@ const Dashboard = () => {
                 <h5 className="text-xl font-semibold">{summary.title}</h5>
                 <Separator className="bg-light-400" />
                 <FormattedDateTime
-                  date={summary.latestDate}
+                  date={summary.latestDate ?? ""}
                   className="text-center text-sm"
                 />
               </div>
