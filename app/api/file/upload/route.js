@@ -6,7 +6,7 @@ import connectDB from "../../../../lib/dbConnection";
 import File from "../../../../lib/models/file.model";
 import User from "../../../../lib/models/user.model";
 
-export const POST = asyncHandler(async (req, _) => {
+export const POST = asyncHandler(async (req) => {
   try {
     await connectDB();
     const decodedToken = utils.verifyJWT(req);
