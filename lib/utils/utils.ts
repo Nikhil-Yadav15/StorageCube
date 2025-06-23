@@ -192,10 +192,8 @@ const refreshAccessToken = async () => {
     localStorageService.setRefreshToken(response.data.refreshToken);
     return response.data;
   } catch (error) {
+    console.log("Token refresh failed:", error);
     localStorageService.clearLocalStorage();
-    if (process.env.NODE_ENV === "development") {
-      console.log("Token refresh failed:", error);
-    }
     return null;
   }
 };
@@ -214,9 +212,7 @@ const renameFile = async (id: string, name: string) => {
 
     return response.data;
   } catch (error) {
-    if (process.env.NODE_ENV === "development") {
-      console.log("error at rename", error);
-    }
+    console.log("error at rename", error);
     return null;
   }
 };
@@ -235,9 +231,7 @@ const updateFileUsers = async (id: string, emails: string[] | string) => {
 
     return response.data;
   } catch (error) {
-    if (process.env.NODE_ENV === "development") {
-      console.log("error at updateFileUsers", error);
-    }
+    console.log("error at updateFileUsers", error);
     return null;
   }
 };
@@ -256,9 +250,7 @@ const deleteFile = async (id: string) => {
 
     return response.data;
   } catch (error) {
-    if (process.env.NODE_ENV === "development") {
-      console.log("error at deleteFile", error);
-    }
+    console.log("error at deleteFile", error);
     return null;
   }
 };
