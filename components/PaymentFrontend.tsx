@@ -1,17 +1,51 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { Star, CreditCard, Crown, Check } from "lucide-react"
-import { Button } from "./ui/button"
+import { useEffect, useState } from "react";
+import { Star, CreditCard, Crown, Check } from "lucide-react";
+import { Button } from "./ui/button";
+
+interface RazorpayOptions {
+  key: string;
+  amount: number;
+  currency: string;
+  name: string;
+  description: string;
+  image: string;
+  order_id: string;
+  handler: (response: {
+    razorpay_payment_id: string;
+    razorpay_order_id: string;
+    razorpay_signature: string;
+  }) => void;
+  prefill: {
+    name: string;
+    email: string;
+  };
+  theme: {
+    color: string;
+  };
+}
+
+interface RazorpayInstance {
+  open(): void;
+  on(event: string, callback: (data: unknown) => void): void;
+}
+
+declare global {
+  interface Window {
+    Razorpay: new (options: RazorpayOptions) => RazorpayInstance;
+  }
+}
+
 interface Plan {
-  id: string
-  name: string
-  price: number
-  storage: string
-  features: string[]
-  icon: JSX.Element
-  buttonText: string
-  disabled: boolean
+  id: string;
+  name: string;
+  price: number;
+  storage: string;
+  features: string[];
+  icon: JSX.Element;
+  buttonText: string;
+  disabled: boolean;
 }
 
 const plans: Plan[] = [
@@ -23,7 +57,7 @@ const plans: Plan[] = [
     features: ["Basic file storage", "Web access"],
     icon: <Star className="w-6 h-6 text-blue-500" />,
     buttonText: "Current Plan",
-    disabled: true
+    disabled: true,
   },
   {
     id: "standard",
@@ -33,7 +67,7 @@ const plans: Plan[] = [
     features: ["Enhanced storage", "Priority support"],
     icon: <CreditCard className="w-6 h-6 text-green-500" />,
     buttonText: "Upgrade Now",
-    disabled: false
+    disabled: false,
   },
   {
     id: "pro",
@@ -43,52 +77,9 @@ const plans: Plan[] = [
     features: ["Maximum storage", "Priority support"],
     icon: <Crown className="w-6 h-6 text-purple-500" />,
     buttonText: "Go Pro",
-    disabled: false
-  }
-]
-
-
-declare global {
-  interface Window {
-    Razorpay: new (options: RazorpayOptions) => RazorpayInstance;
-  }
-
-  interface RazorpayInstance {
-    open(): void;
-    on(event: string, callback: (data: any) => void): void;
-  }
-
-  interface RazorpayOptions {
-    key: string;
-    amount: number;
-    currency: string;
-    name: string;
-    description: string;
-    image: string;
-    order_id: string;
-    handler: (response: {
-      razorpay_payment_id: string;
-      razorpay_order_id: string;
-      razorpay_signature: string;
-    }) => void;
-    prefill: {
-      name: string;
-      email: string;
-    };
-    theme: {
-      color: string;
-    };
-  }
-}
-
-
-declare global {
-  interface Window {
-    Razorpay: new (options: RazorpayOptions) => RazorpayInstance;
-  }
-}
-
-
+    disabled: false,
+  },
+];
 
 const handleUpgrade = async (plan: Plan) => {
   try {
@@ -105,16 +96,15 @@ const handleUpgrade = async (plan: Plan) => {
 
     if (!data.orderId || !data.key) throw new Error("Order not created");
 
-    // 💳 Step 3: Open Razorpay Checkout
-    const options = {
-      key: data.key, // Razorpay public key
+    const options: RazorpayOptions = {
+      key: data.key,
       amount: data.amount,
       currency: data.currency,
       name: "StorageCube",
       description: `Upgrade to ${plan.name}`,
       image: "/logo.png",
       order_id: data.orderId,
-      handler: async function (response: Record<string, string>) {
+      handler: async function (response) {
         const verifyRes = await fetch("/api/payment/verify", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -147,23 +137,19 @@ const handleUpgrade = async (plan: Plan) => {
   }
 };
 
-
 export default function PlanPopup() {
-  const [showPopup, setShowPopup] = useState(false)
-
-  
+  const [showPopup, setShowPopup] = useState(false);
 
   useEffect(() => {
     if (showPopup) {
-      document.body.style.overflow = "hidden" // Lock scroll
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = "auto"
+      document.body.style.overflow = "auto";
     }
-  }, [showPopup])
+  }, [showPopup]);
 
   return (
     <>
-      {/* Trigger Button */}
       <div className="text-center ">
         <Button
           onClick={() => setShowPopup(true)}
@@ -178,12 +164,10 @@ export default function PlanPopup() {
         </Button>
       </div>
 
-      {/* Fullscreen Modal */}
       {showPopup && (
         <div className="glass-card fixed inset-0 z-[9999] flex items-center justify-center bg-black/70">
           <div className=" relative w-full h-full overflow-y-auto flex items-center justify-center px-4 py-12">
             <div className="glass-card bg-white max-w-6xl w-full rounded-lg shadow-lg p-8 relative animate-in zoom-in-95">
-
               <h2 className="text-3xl font-bold text-center mb-10">Choose a Plan</h2>
 
               <div className=" grid md:grid-cols-3 gap-8">
@@ -191,24 +175,39 @@ export default function PlanPopup() {
                   <div
                     key={plan.id}
                     className={`hover:scale-105  border rounded-xl p-6 transition-all duration-500 ease-in-out ${
-                      plan.disabled ? "bg-gray-400" : "hover:cursor-pointer hover:bg-gradient-to-r hover:from-indigo-500 hover:to-purple-500  bg-gradient-to-l from-teal-400 to-cyan-600"
+                      plan.disabled
+                        ? "bg-gray-400"
+                        : "hover:cursor-pointer hover:bg-gradient-to-r hover:from-indigo-500 hover:to-purple-500  bg-gradient-to-l from-teal-400 to-cyan-600"
                     } `}
                   >
-                    <div className=" flex text-cyan-400 justify-center mb-4">{plan.icon}</div>
-                    <h3 className="text-xl text-black font-semibold text-center mb-1">{plan.name}</h3>
+                    <div className=" flex text-cyan-400 justify-center mb-4">
+                      {plan.icon}
+                    </div>
+                    <h3 className="text-xl text-black font-semibold text-center mb-1">
+                      {plan.name}
+                    </h3>
                     <p className="text-center text-gray-700 mb-1 text-2xl font-bold">
                       ₹{plan.price}
-                      {plan.price > 0 && <span className="text-sm font-normal"> /mo</span>}
+                      {plan.price > 0 && (
+                        <span className="text-sm font-normal"> /mo</span>
+                      )}
                     </p>
                     <p className="text-center text-sm text-blue-600 mb-4">
                       {plan.storage} Storage
                     </p>
                     <ul className="text-sm text-gray-800 space-y-2 mb-6">
                       {plan.features.map((f, i) => (
-                        <li key={i} className={` ${
-                      plan.disabled ? "text-white" : "text-black"
-                    } flex items-center`}>
-                          <Check className={`w-4 h-4 ${plan.disabled ? "text-emerald-200" : "text-emerald-400"}  mr-2`} />
+                        <li
+                          key={i}
+                          className={` ${
+                            plan.disabled ? "text-white" : "text-black"
+                          } flex items-center`}
+                        >
+                          <Check
+                            className={`w-4 h-4 ${
+                              plan.disabled ? "text-emerald-200" : "text-emerald-400"
+                            }  mr-2`}
+                          />
                           {f}
                         </li>
                       ))}
@@ -226,28 +225,24 @@ export default function PlanPopup() {
                     </button>
                   </div>
                 ))}
-
-                 
               </div>
 
               <div className="mt-5 flex justify-center w-full">
-        <Button
-          onClick={() => setShowPopup(false)}
-          className="bg-gradient-to-r from-gray-300 to-bray-500 shadow-md  text-white px-8 py-6 rounded-full font-medium hover:shadow-lg
+                <Button
+                  onClick={() => setShowPopup(false)}
+                  className="bg-gradient-to-r from-gray-300 to-bray-500 shadow-md  text-white px-8 py-6 rounded-full font-medium hover:shadow-lg
                   hover:translate-y-[5px]
                   hover:brightness-110
                   hover:scale-105
                   transition-all duration-200 ease-in-out"
-        >
-          Close
-        </Button>
-      </div>
-                
-
+                >
+                  Close
+                </Button>
+              </div>
             </div>
           </div>
         </div>
       )}
     </>
-  )
+  );
 }
