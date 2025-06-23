@@ -103,26 +103,24 @@ const sendEmailOTP = async (email: string, firstName: string) => {
 };
 
 const clearCookies = (cookieStore: RequestCookies) => {
-  cookieStore.set({
-    name: "accessToken",
-    value: "",
+  cookieStore.set("accessToken", "", {
     path: "/",
+    expires: new Date(0), 
     httpOnly: true,
     secure: true,
     sameSite: "strict",
-    maxAge: 0,
   });
 
-  cookieStore.set({
-    name: "refreshToken",
-    value: "",
+  cookieStore.set("refreshToken", "", {
     path: "/",
+    expires: new Date(0), 
     httpOnly: true,
     secure: true,
     sameSite: "strict",
-    maxAge: 0,
   });
 };
+
+
 
 const verifyJWT = (req: {
   cookies?: RequestCookies;
