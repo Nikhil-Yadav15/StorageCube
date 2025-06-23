@@ -83,6 +83,7 @@ const Chart = ({ used = 0 }: { used: number }) => {
                       </text>
                     );
                   }
+                  return null;
                 }}
               />
             </PolarRadiusAxis>
