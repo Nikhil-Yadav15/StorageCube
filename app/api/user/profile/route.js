@@ -2,7 +2,7 @@ import { asyncHandler } from "../../../../lib/utils/asyncHandler";
 import { utils } from "../../../../lib/utils/server-utils";
 import connectDB from "../../../../lib/dbConnection";
 
-export const GET = asyncHandler(async (req, _) => {
+export const GET = asyncHandler(async (req) => {
   try {
     await connectDB();
     const decodedToken = utils.verifyJWT(req);
