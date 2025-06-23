@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { mongodbConfig } from "../dbConnection/config";
 import nodemailer from "nodemailer";
 import { RequestCookies } from "next/dist/compiled/@edge-runtime/cookies";
+import { cookies } from "next/headers"; 
 
 type ResponseHandlerProps = {
   message: string;
@@ -102,24 +103,34 @@ const sendEmailOTP = async (email: string, firstName: string) => {
   }
 };
 
-const clearCookies = (cookieStore: RequestCookies) => {
-  cookieStore.set("accessToken", "", {
-    path: "/",
-    expires: new Date(0), 
-    httpOnly: true,
-    secure: true,
-    sameSite: "strict",
-  });
+// const clearCookies = (cookieStore: RequestCookies) => {
+//   cookieStore.set({
+//     name: "accessToken",
+//     value: "",
+//     path: "/",
+//     httpOnly: true,
+//     secure: true,
+//     sameSite: "strict",
+//     expires: new Date(0),
+//   });
 
-  cookieStore.set("refreshToken", "", {
-    path: "/",
-    expires: new Date(0), 
-    httpOnly: true,
-    secure: true,
-    sameSite: "strict",
-  });
+//   cookieStore.set({
+//     name: "refreshToken",
+//     value: "",
+//     path: "/",
+//     httpOnly: true,
+//     secure: true,
+//     sameSite: "strict",
+//     expires: new Date(0),
+//   });
+// };
+
+export const clearCookies = () => {
+  const cookieStore = cookies();
+  
+  cookieStore.delete("accessToken");
+  cookieStore.delete("refreshToken");
 };
-
 
 
 const verifyJWT = (req: {
