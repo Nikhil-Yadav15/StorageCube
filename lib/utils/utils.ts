@@ -23,7 +23,7 @@ export const convertFileToUrl = (file: File) => URL.createObjectURL(file);
 
 export const convertFileSize = (sizeInBytes: number, digits?: number) => {
   if (sizeInBytes < 1024) {
-    return sizeInBytes + " MB"; // Less than 1 KB, show in Bytes
+    return sizeInBytes + " Bytes"; // Less than 1 KB, show in Bytes
   } else if (sizeInBytes < 1024 * 1024) {
     const sizeInKB = sizeInBytes / 1024;
     return sizeInKB.toFixed(digits || 1) + " KB"; // Less than 1 MB, show in KB
@@ -183,76 +183,32 @@ const refreshAccessToken = async () => {
     const refreshToken = localStorageService.getRefreshToken();
     const response = await httpClient.post(apiUrls.refreshAccessToken, { refreshToken });
 
-    if (!response || response.status !== 200) {
-      localStorageService.clearLocalStorage();
-      throw new Error("Failed to refresh token");
-    }
-
     localStorageService.setAccessToken(response.data.accessToken);
     localStorageService.setRefreshToken(response.data.refreshToken);
     return response.data;
   } catch (error) {
     console.log("Token refresh failed:", error);
     localStorageService.clearLocalStorage();
-    return null;
+    throw error;
   }
 };
 
 const renameFile = async (id: string, name: string) => {
   const httpClient = createHttpClient();
-  try {
-    const response = await httpClient.put(`${apiUrls.getFile}/${id}/rename`, { name });
-
-    if (!response || response.status !== 200) {
-      return {
-        success: false,
-        message: response?.message || "Failed to rename file",
-      };
-    }
-
-    return response.data;
-  } catch (error) {
-    console.log("error at rename", error);
-    return null;
-  }
+  const response = await httpClient.put(`${apiUrls.getFile}/${id}/rename`, { name });
+  return response.data;
 };
 
 const updateFileUsers = async (id: string, emails: string[] | string) => {
   const httpClient = createHttpClient();
-  try {
-    const response = await httpClient.put(`${apiUrls.getFile}/${id}/share`, { emails });
-
-    if (!response || response.status !== 200) {
-      return {
-        success: false,
-        message: response?.message || "Failed to share file",
-      };
-    }
-
-    return response.data;
-  } catch (error) {
-    console.log("error at updateFileUsers", error);
-    return null;
-  }
+  const response = await httpClient.put(`${apiUrls.getFile}/${id}/share`, { emails });
+  return response.data;
 };
 
 const deleteFile = async (id: string) => {
   const httpClient = createHttpClient();
-  try {
-    const response = await httpClient.delete(`${apiUrls.getFile}/${id}/delete`);
-
-    if (!response || response.status !== 200) {
-      return {
-        success: false,
-        message: response?.message || "Failed to delete file",
-      };
-    }
-
-    return response.data;
-  } catch (error) {
-    console.log("error at deleteFile", error);
-    return null;
-  }
+  const response = await httpClient.delete(`${apiUrls.getFile}/${id}/delete`);
+  return response.data;
 };
 
 const sliceFileName = (name: string) => {

@@ -13,7 +13,7 @@ export const PUT = asyncHandler(
 
       if (!emails) {
         return utils.responseHandler({
-          message: `${Array.isArray(emails) ? "Emails" : "Email"} are missing`,
+          message: "Email(s) are required",
           status: 400,
           success: false,
         });
@@ -29,53 +29,43 @@ export const PUT = asyncHandler(
         });
       }
 
-      if (file.owner.toString() !== req.user._id.toString()) {
-        if (Array.isArray(emails)) {
+      const isOwner = file.owner.toString() === req.user._id.toString();
+
+      if (Array.isArray(emails)) {
+        // Adding users — only the owner can share
+        if (!isOwner) {
           return utils.responseHandler({
             message: "You are not authorized to share this file",
             status: 401,
             success: false,
           });
         }
-
-        if (emails !== req.user.email) {
+        file.users = [...file.users, ...emails.map((e) => e.trim())];
+      } else {
+        // Removing a user — owner can remove anyone, non-owner can only remove themselves
+        if (!isOwner && emails !== req.user.email) {
           return utils.responseHandler({
-            message: "You are not authorized to remove this file",
+            message: "You are not authorized to remove this user",
             status: 401,
             success: false,
           });
         }
-
         file.users = file.users.filter((e) => e !== emails);
-        await file.save();
-
-        return utils.responseHandler({
-          message: "File removed successfully",
-          data: {
-            file: file,
-          },
-          status: 200,
-          success: true,
-        });
       }
-
-      file.users = Array.isArray(emails)
-        ? [...file.users, ...emails.map((e) => e.trim())]
-        : file.users.filter((e) => e !== emails);
 
       await file.save();
 
       return utils.responseHandler({
-        message: `${Array.isArray(emails) ? "File shared" : "File removed"} successfully`,
+        message: `${Array.isArray(emails) ? "File shared" : "User removed"} successfully`,
         data: {
-          file: file,
+          file,
         },
         status: 200,
         success: true,
       });
     } catch (error) {
       return utils.responseHandler({
-        message: error.message || "Internal Server Error while fetching user",
+        message: error.message || "Internal Server Error while updating file sharing",
         status: error.status || 500,
         success: false,
       });

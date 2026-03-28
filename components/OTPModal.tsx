@@ -46,27 +46,24 @@ const OTPModal = ({ email }: Props) => {
         code: password,
       });
 
-      if (!session || session.status !== 200) {
-        setIsLoading(false);
-        return toast({
-          description: (
-            <p className="body-2 text-white">
-              {session?.message || "Something went wrong while verifying OTP"}
-            </p>
-          ),
-          className: "error-toast",
-        });
-      }
-
       if (session) {
         localStorageService.setAccessToken(session.data.accessToken);
         localStorageService.setRefreshToken(session.data.refreshToken);
-        router.push("/"); // trigger navigation after modal closes
+        router.push("/");
       }
 
 
-    } catch (error) {
-      console.log("Failed to verify OTP", error);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 
+        (error && typeof error === "object" && "message" in error) ? String((error as {message: string}).message) : undefined;
+      toast({
+        description: (
+          <p className="body-2 text-white">
+            {message || "Something went wrong while verifying OTP"}
+          </p>
+        ),
+        className: "error-toast",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -79,19 +76,17 @@ const OTPModal = ({ email }: Props) => {
       const user = await httpClient.post(apiUrls.resend, {
         email,
       });
-
-      if (user.status !== 200) {
-        return toast({
-          description: (
-            <p className="body-2 text-white">
-              {user?.message || `Something went wrong while sending OTP`}
-            </p>
-          ),
-          className: "error-toast",
-        });
-      }
-    } catch (error) {
-      console.log("error", error);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 
+        (error && typeof error === "object" && "message" in error) ? String((error as {message: string}).message) : undefined;
+      toast({
+        description: (
+          <p className="body-2 text-white">
+            {message || `Something went wrong while sending OTP`}
+          </p>
+        ),
+        className: "error-toast",
+      });
     }
   };
 

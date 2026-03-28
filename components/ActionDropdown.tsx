@@ -73,10 +73,6 @@ const ActionDropdown = ({ file, fetchFiles }: Props) => {
           throw new Error("Invalid action");
       }
 
-      if (response.status !== 200) {
-        throw new Error(response?.message || "Something went wrong");
-      }
-
       closeAllModals();
       await fetchFiles();
     } catch (error) {

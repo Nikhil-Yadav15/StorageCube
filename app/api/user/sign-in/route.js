@@ -1,9 +1,9 @@
 import User from "../../../../lib/models/user.model";
 import { utils } from "../../../../lib/utils/server-utils";
 import connectDB from "../../../../lib/dbConnection";
+import { asyncHandler } from "../../../../lib/utils/asyncHandler";
 
-export const POST = async (req) => {
-  try {
+export const POST = asyncHandler(async (req) => {
     
     await connectDB();
 
@@ -12,6 +12,15 @@ export const POST = async (req) => {
     if (!email) {
       return utils.responseHandler({
         message: "Email is required",
+        status: 400,
+        success: false,
+      });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return utils.responseHandler({
+        message: "Invalid email format",
         status: 400,
         success: false,
       });
@@ -56,15 +65,7 @@ export const POST = async (req) => {
       status: 200,
       success: true,
       data: {
-        emailVerificationToken: updatedUser.emailVerificationToken,
-        emailVerificationExpiry: updatedUser.emailVerificationExpiry,
+        email: updatedUser.email,
       },
     });
-  } catch (error) {
-    return utils.responseHandler({
-      message: error.message,
-      status: 500,
-      success: false,
-    });
-  }
-};
+});

@@ -2,92 +2,118 @@ import User from "../../../../lib/models/user.model";
 import { utils } from "../../../../lib/utils/server-utils";
 import { cookies } from "next/headers";
 import connectDB from "../../../../lib/dbConnection";
+import { asyncHandler } from "../../../../lib/utils/asyncHandler";
 
-const POST = async (req) => {
-  try {
-    await connectDB();
+const MAX_OTP_ATTEMPTS = 5;
+const OTP_LOCKOUT_MINUTES = 15;
 
-    const { email, code } = await req.json();
-    const isFieldEmpty = [email, code].some((field) => field?.trim() === "");
+const POST = asyncHandler(async (req) => {
+  await connectDB();
 
-    if (isFieldEmpty) {
-      return utils.responseHandler({
-        message: "All fields are required",
-        status: 400,
-        success: false,
-      });
-    }
+  const { email, code } = await req.json();
+  const isFieldEmpty = [email, code].some((field) => field?.trim() === "");
 
-    const user = await User.findOne({ email });
-
-    if (!user) {
-      return utils.responseHandler({
-        message: "User not found",
-        status: 404,
-        success: false,
-      });
-    }
-    if (user.emailVerificationExpiry < new Date()) {
-      return utils.responseHandler({
-        message: "OTP has expired",
-        status: 400,
-        success: false,
-      });
-    }
-
-    if (user.emailVerificationToken !== code) {
-      return utils.responseHandler({
-        message: "Invalid OTP",
-        status: 400,
-        success: false,
-      });
-    }
-
-    await User.findOneAndUpdate(
-      { email },
-      {
-        $set: {
-          emailVerificationToken: null,
-          emailVerificationExpiry: null,
-          isEmailVerified: true,
-        },
-      }
-    );
-
-    const loggedInUser = await User.findById(user._id).select(
-      "-password -emailVerificationToken -isEmailVerified -emailVerificationExpiry -refreshToken -createdAt -updatedAt -__v"
-    );
-
-    const { accessToken, refreshToken } =
-      await utils.generateAccessAndRefreshToken(user._id);
-
-    const options = {
-      path: "/",
-      httpOnly: true,
-      secure: true,
-      sameSite: "strict",
-    };
-
-    (cookies()).set("accessToken", accessToken, options);
-    (cookies()).set("refreshToken", refreshToken, options);
-
+  if (isFieldEmpty) {
     return utils.responseHandler({
-      message: "OTP verified successfully",
-      status: 200,
-      success: true,
-      data: {
-        accessToken,
-        refreshToken,
-        user: loggedInUser,
-      },
-    });
-  } catch (error) {
-    return utils.responseHandler({
-      message: error.message,
-      status: 500,
+      message: "All fields are required",
+      status: 400,
       success: false,
     });
   }
-};
+
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    return utils.responseHandler({
+      message: "User not found",
+      status: 404,
+      success: false,
+    });
+  }
+
+  // Rate limiting: check if user has exceeded max attempts
+  const now = new Date();
+  const lockoutExpiry = user.otpLastAttempt
+    ? new Date(user.otpLastAttempt.getTime() + OTP_LOCKOUT_MINUTES * 60 * 1000)
+    : null;
+
+  if (user.otpAttempts >= MAX_OTP_ATTEMPTS && lockoutExpiry && now < lockoutExpiry) {
+    const minutesLeft = Math.ceil((lockoutExpiry - now) / 60000);
+    return utils.responseHandler({
+      message: `Too many attempts. Try again in ${minutesLeft} minute(s).`,
+      status: 429,
+      success: false,
+    });
+  }
+
+  // Reset attempts if lockout window has passed
+  if (lockoutExpiry && now >= lockoutExpiry) {
+    user.otpAttempts = 0;
+  }
+
+  if (!user.emailVerificationExpiry || user.emailVerificationExpiry < now) {
+    return utils.responseHandler({
+      message: "OTP has expired",
+      status: 400,
+      success: false,
+    });
+  }
+
+  if (user.emailVerificationToken !== code) {
+    // Increment failed attempts
+    user.otpAttempts = (user.otpAttempts || 0) + 1;
+    user.otpLastAttempt = now;
+    await user.save({ validateBeforeSave: false });
+
+    return utils.responseHandler({
+      message: "Invalid OTP",
+      status: 400,
+      success: false,
+    });
+  }
+
+  // Success — reset attempts and clear OTP
+  await User.findOneAndUpdate(
+    { email },
+    {
+      $set: {
+        emailVerificationToken: null,
+        emailVerificationExpiry: null,
+        isEmailVerified: true,
+        otpAttempts: 0,
+        otpLastAttempt: null,
+      },
+    }
+  );
+
+  const loggedInUser = await User.findById(user._id).select(
+    "-password -emailVerificationToken -isEmailVerified -emailVerificationExpiry -refreshToken -createdAt -updatedAt -__v"
+  );
+
+  const { accessToken, refreshToken } =
+    await utils.generateAccessAndRefreshToken(user._id);
+
+  const options = {
+    path: "/",
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict",
+  };
+
+  const cookieStore = await cookies();
+  cookieStore.set("accessToken", accessToken, options);
+  cookieStore.set("refreshToken", refreshToken, options);
+
+  return utils.responseHandler({
+    message: "OTP verified successfully",
+    status: 200,
+    success: true,
+    data: {
+      accessToken,
+      refreshToken,
+      user: loggedInUser,
+    },
+  });
+});
 
 export { POST };

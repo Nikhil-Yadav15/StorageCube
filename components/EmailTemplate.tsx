@@ -11,7 +11,7 @@ const EmailTemplate: FC<Readonly<EmailTemplateProps>> = ({
 }) => (
   <div>
     <h1>Welcome, {firstName}!</h1>
-    <h1>Welcome, {otp}!</h1>
+    <p>Your verification code is: <strong>{otp}</strong></p>
   </div>
 );
 

@@ -1,6 +1,6 @@
 import { asyncHandler } from "../../../../lib/utils/asyncHandler";
 import { utils } from "../../../../lib/utils/server-utils";
-import { uploadOnCloudinary } from "../../../../lib/utils/cloudinary";
+import { uploadOnCloudinary, deleteFromCloudinary } from "../../../../lib/utils/cloudinary";
 import { getFileType } from "../../../../lib/utils/utils";
 import connectDB from "../../../../lib/dbConnection";
 import File from "../../../../lib/models/file.model";
@@ -44,7 +44,19 @@ export const POST = asyncHandler(async (req) => {
       });
     }
 
-    if (user.totalSpaceUsed + fileResponse.bytes > user.totalSpace) {
+    // Atomically check and increment storage to prevent race conditions
+    const updatedUser = await User.findOneAndUpdate(
+      {
+        _id: ownerId,
+        $expr: { $lte: [{ $add: ["$totalSpaceUsed", fileResponse.bytes] }, "$totalSpace"] },
+      },
+      {
+        $inc: { totalSpaceUsed: fileResponse.bytes },
+      },
+      { new: true }
+    );
+
+    if (!updatedUser) {
       await deleteFromCloudinary(fileResponse.url);
       return utils.responseHandler({
         message: "You have reached your storage limit",
@@ -52,13 +64,6 @@ export const POST = asyncHandler(async (req) => {
         success: false,
       });
     }
-
-    await User.findOneAndUpdate(
-      { _id: ownerId },
-      {
-        $inc: { totalSpaceUsed: fileResponse.bytes },
-      }
-    );
 
     const fileDocument = {
       type: getFileType(formDataFile.name).type,
@@ -77,7 +82,7 @@ export const POST = asyncHandler(async (req) => {
 
     if (!existedFile) {
       return utils.responseHandler({
-        message: "Something went wrong while uploading video",
+        message: "Something went wrong while uploading file",
         status: 500,
         success: false,
       });

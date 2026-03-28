@@ -29,24 +29,21 @@ const Page = () => {
         `${apiUrls.getFile}/${types}?searchText=${searchText}&sort=${sort}`
       );
 
-      if (!response || response.status !== 200) {
-        toast({
-          description: (
-            <p className="body-2 text-white">
-              {response?.message || `Something went wrong while fetching files`}
-            </p>
-          ),
-          className: "error-toast",
-        });
-        return;
-      }
-
       setFiles({
         total: response.data.total,
         documents: response.data.files,
       });
-    } catch (error) {
-      console.log("Error fetching files:", error);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 
+        (error && typeof error === "object" && "message" in error) ? String((error as {message: string}).message) : undefined;
+      toast({
+        description: (
+          <p className="body-2 text-white">
+            {message || `Something went wrong while fetching files`}
+          </p>
+        ),
+        className: "error-toast",
+      });
     }
   }, [types, searchText, sort, toast]); 
 
@@ -57,7 +54,7 @@ const Page = () => {
   return (
     <div className="page-container">
       <section className="w-full">
-        <h1 className="h1 capitalize">{"type"}</h1>
+        <h1 className="h1 capitalize">{String(type)}</h1>
 
         <div className="total-size-section">
           <p className="body1">

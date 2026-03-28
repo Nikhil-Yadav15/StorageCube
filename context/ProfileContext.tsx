@@ -42,23 +42,19 @@ export const ProfileProvider = ({
 
     try {
       const user = await httpClient.get(apiUrls.profile);
-
-      if (!user || user.status !== 200) {
-        toast({
-          description: (
-            <p className="body-2 text-white">
-              {user?.message ||
-                `Something went wrong while fetching profile details`}
-            </p>
-          ),
-          className: "error-toast",
-        });
-        return;
-      }
-
       setProfile(user.data.user);
-    } catch (error) {
-      console.log("error", error);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 
+        (error && typeof error === "object" && "message" in error) ? String((error as {message: string}).message) : undefined;
+      toast({
+        description: (
+          <p className="body-2 text-white">
+            {message ||
+              `Something went wrong while fetching profile details`}
+          </p>
+        ),
+        className: "error-toast",
+      });
     }
   };
 

@@ -46,11 +46,6 @@ export function createHttpClient(params?: AxiosRequestConfig) {
     async (error: AxiosError) => {
       const originalRequest = error.config as CustomAxiosRequestConfig;
 
-      if (!error.isAxiosError) {
-        return error;
-      }
-
-      // Ensure originalRequest exists before proceeding
       if (!originalRequest) {
         return Promise.reject(error);
       }
@@ -70,13 +65,10 @@ export function createHttpClient(params?: AxiosRequestConfig) {
 
       const { data } = error.response || ({} as any);
 
-      return Promise.resolve({
+      return Promise.reject({
         message: data?.message || error.message,
         hasError: true,
-        error: true,
-        title: data?.title || "Something went wrong",
-        status: error.status || error.response?.status || 500,
-        statusText: data?.message || error.message,
+        status: error.response?.status || 500,
       });
     }
   );

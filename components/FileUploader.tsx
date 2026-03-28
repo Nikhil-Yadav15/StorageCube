@@ -63,17 +63,15 @@ const FileUploader = ({ className }: Props) => {
         headers: {
           "Content-Type": "multipart/form-data",
         },
-        signal: abortController.signal, // Use the signal from AbortController
+        signal: abortController.signal,
       });
 
       abortControllers.current.delete(file.name);
-
-      if (response && response.status === 200) {
-        setFiles((prevFiles) => prevFiles.filter((f) => f.name !== file.name));
-      }
+      setFiles((prevFiles) => prevFiles.filter((f) => f.name !== file.name));
 
       return response.data;
-    } catch (error) {
+    } catch (error: unknown) {
+      abortControllers.current.delete(file.name);
       if (abortController.signal.aborted) {
         console.log("Upload aborted:", file.name);
       } else {

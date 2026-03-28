@@ -19,7 +19,8 @@ export const GET = asyncHandler(async (req, { params }) => {
     const [sortBy, orderBy] = sort.split("-");
     const sortOrder = orderBy === "desc" ? { [sortBy]: -1 } : { [sortBy]: 1 };
 
-    const searchPattern = new RegExp(searchText.trim(), "i");
+    const escapedSearch = searchText.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const searchPattern = escapedSearch ? new RegExp(escapedSearch, "i") : null;
 
     const query = {
       $or: [
@@ -117,8 +118,9 @@ export const GET = asyncHandler(async (req, { params }) => {
     ];
 
     if (limit) {
+      const limitValue = Math.min(Math.max(parseInt(limit) || 10, 1), 100);
       aggregatePipline.push({
-        $limit: 10,
+        $limit: limitValue,
       });
     }
 
@@ -128,7 +130,7 @@ export const GET = asyncHandler(async (req, { params }) => {
       message: "files fetched successfully",
       data: {
         total: files.length,
-        files: files,
+        files,
       },
       status: 200,
       success: true,

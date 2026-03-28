@@ -10,10 +10,11 @@ export const POST = asyncHandler(async (req) => {
   const cookieStore = await cookies();
 
   const incomingRefreshToken =
-    req.cookies?.get("refreshToken")?.value || req.body.refreshToken;
+    cookieStore.get("refreshToken")?.value;
 
   if (!incomingRefreshToken) {
-    utils.clearCookies(cookieStore);
+    cookieStore.delete("accessToken");
+    cookieStore.delete("refreshToken");
     return utils.responseHandler({
       message: "unauthorized request",
       status: 401,
@@ -40,7 +41,8 @@ export const POST = asyncHandler(async (req) => {
     }
 
     if (incomingRefreshToken !== user?.refreshToken) {
-      utils.clearCookies(cookieStore);
+      cookieStore.delete("accessToken");
+      cookieStore.delete("refreshToken");
       return utils.responseHandler({
         message: "Refresh token is expired or used",
         status: 401,
@@ -58,8 +60,8 @@ export const POST = asyncHandler(async (req) => {
     const { accessToken, refreshToken } =
       await utils.generateAccessAndRefreshToken(user._id);
 
-    (await cookies()).set("accessToken", accessToken, options);
-    (await cookies()).set("refreshToken", refreshToken, options);
+    cookieStore.set("accessToken", accessToken, options);
+    cookieStore.set("refreshToken", refreshToken, options);
 
     return utils.responseHandler({
       message: "Access token refreshed Successfully",
@@ -68,8 +70,9 @@ export const POST = asyncHandler(async (req) => {
       data: { accessToken, refreshToken },
     });
   } catch (error) {
-    utils.clearCookies(cookieStore);
-    console.log(error);
+    cookieStore.delete("accessToken");
+    cookieStore.delete("refreshToken");
+    console.error(error);
     return utils.responseHandler({
       message: "Something went wrong while refreshing access token!",
       status: 500,

@@ -9,6 +9,8 @@ import FormattedDateTime from "@/components/FormattedDateTime";
 import { createHttpClient } from "@/tools/httpClient";
 import { apiUrls } from "@/tools/apiUrls";
 
+const MAX_CACHE_SIZE = 50;
+
 const Search = () => {
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get("query") || "";
@@ -31,17 +33,18 @@ const Search = () => {
         `${apiUrls.getFile}/all?searchText=${currentQuery}`
       );
 
-      if (!response || response.status !== 200) {
-        throw new Error("Failed to fetch files");
-      }
-
       if (latestQuery.current !== currentQuery) return;
 
       setResults(response.data.files);
-      setCacheResults(prev => ({
-        ...prev,
-        [currentQuery]: response.data.files,
-      }));
+      setCacheResults(prev => {
+        const updated = { ...prev, [currentQuery]: response.data.files };
+        // Evict oldest entries if cache exceeds max size
+        const keys = Object.keys(updated);
+        if (keys.length > MAX_CACHE_SIZE) {
+          keys.slice(0, keys.length - MAX_CACHE_SIZE).forEach(k => delete updated[k]);
+        }
+        return updated;
+      });
 
       if (initialized) {
         setOpen(true);
@@ -63,7 +66,7 @@ const Search = () => {
       searchBar.addEventListener("blur", handleBlur);
       return () => searchBar.removeEventListener("blur", handleBlur);
     }
-  }, [open]);
+  }, []);
 
   useEffect(() => {
     if (searchQuery === "") {

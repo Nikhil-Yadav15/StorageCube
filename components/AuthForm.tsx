@@ -39,7 +39,7 @@ const authFormSchema = (formType: "sign-in" | "sign-up") => {
 const AuthForm = ({ type }: Props) => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [accountId, setAccountId] = useState(null);
+  const [showOTP, setShowOTP] = useState(false);
 
   const { toast } = useToast();
 
@@ -65,23 +65,20 @@ const AuthForm = ({ type }: Props) => {
               email: values.email,
             });
 
-      if (user.status !== 200) {
-        setIsLoading(false);
-        return toast({
-          description: (
-            <p className="body-2 text-white">
-              {user?.message || `Something went wrong while ${type}`}
-            </p>
-          ),
-          className: "error-toast",
-        });
-      }
-
       if (user && user.status === 200) {
-        setAccountId(user.data.emailVerificationToken);
+        setShowOTP(true);
       }
-    } catch (error) {
-      console.log("error", error);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 
+        (error && typeof error === "object" && "message" in error) ? String((error as {message: string}).message) : undefined;
+      toast({
+        description: (
+          <p className="body-2 text-white">
+            {message || `Something went wrong while ${type}`}
+          </p>
+        ),
+        className: "error-toast",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -170,8 +167,8 @@ const AuthForm = ({ type }: Props) => {
         </form>
       </Form>
 
-      {accountId && (
-        <OTPModal email={form.getValues("email")} accountId={accountId} />
+      {showOTP && (
+        <OTPModal email={form.getValues("email")} accountId={null} />
       )}
     </>
   );

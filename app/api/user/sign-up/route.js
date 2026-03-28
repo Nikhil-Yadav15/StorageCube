@@ -2,9 +2,9 @@ import User from "../../../../lib/models/user.model";
 import { utils } from "../../../../lib/utils/server-utils";
 import { avatarPlaceholderUrl } from "@/constants";
 import connectDB from "../../../../lib/dbConnection";
+import { asyncHandler } from "../../../../lib/utils/asyncHandler";
 
-export const POST = async (req) => {
-  try {
+export const POST = asyncHandler(async (req) => {
     await connectDB();
 
     const { fullName, email } = await req.json();
@@ -16,6 +16,15 @@ export const POST = async (req) => {
     if (isFieldEmpty) {
       return utils.responseHandler({
         message: "All fields are required",
+        status: 400,
+        success: false,
+      });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return utils.responseHandler({
+        message: "Invalid email format",
         status: 400,
         success: false,
       });
@@ -67,15 +76,7 @@ export const POST = async (req) => {
       status: 200,
       success: true,
       data: {
-        emailVerificationToken: createdUser.emailVerificationToken,
-        emailVerificationExpiry: createdUser.emailVerificationExpiry,
+        email: createdUser.email,
       },
     });
-  } catch (error) {
-    return utils.responseHandler({
-      message: error.message,
-      status: 500,
-      success: false,
-    });
-  }
-};
+});

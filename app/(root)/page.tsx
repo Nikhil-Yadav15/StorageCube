@@ -36,25 +36,22 @@ const Dashboard = () => {
     try {
       const response = await httpClient.get(`${apiUrls.getFile}/all?limit=10`);
 
-      if (!response || response.status !== 200) {
-        toast({
-          description: (
-            <p className="body-2 text-white">
-              {response?.message ||
-                `Something went wrong while fetching recent files`}
-            </p>
-          ),
-          className: "error-toast",
-        });
-        return;
-      }
-
       setFiles({
         documents: response.data.files,
         total: response.data.total,
       });
-    } catch (error) {
-      console.log("Error fetching files:", error);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 
+        (error && typeof error === "object" && "message" in error) ? String((error as {message: string}).message) : undefined;
+      toast({
+        description: (
+          <p className="body-2 text-white">
+            {message ||
+              `Something went wrong while fetching recent files`}
+          </p>
+        ),
+        className: "error-toast",
+      });
     }
   };
 
@@ -62,21 +59,19 @@ const Dashboard = () => {
     const httpClient = createHttpClient();
     try {
       const response = await httpClient.get(apiUrls.getTotalSpaceUsed);
-      if (!response || response.status !== 200) {
-        toast({
-          description: (
-            <p className="body-2 text-white">
-              {response?.message ||
-                `Something went wrong while fetching total space used`}
-            </p>
-          ),
-          className: "error-toast",
-        });
-        return;
-      }
       setTotalSpace(response.data.totalSpace);
-    } catch (error) {
-      console.log("Error fetching files:", error);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 
+        (error && typeof error === "object" && "message" in error) ? String((error as {message: string}).message) : undefined;
+      toast({
+        description: (
+          <p className="body-2 text-white">
+            {message ||
+              `Something went wrong while fetching total space used`}
+          </p>
+        ),
+        className: "error-toast",
+      });
     }
   };
 
