@@ -6,13 +6,15 @@ let connected = false;
 const connectDB = async () => {
   mongoose.set("strictQuery", true);
 
-  // If the database is already connected, don't connect again
   if (connected) {
     console.log("MongoDB is already connected...");
     return;
   }
 
-  // Connect to MongoDB
+  if (!mongodbConfig.mongodbUri) {
+    throw new Error("MongoDB URI is not configured");
+  }
+
   try {
     const connectionInstance = await mongoose.connect(mongodbConfig.mongodbUri);
     connected = true;
@@ -21,7 +23,7 @@ const connectDB = async () => {
     );
   } catch (error) {
     console.log("MongoDB connection error", error);
-    process.exit(1);
+    throw error;
   }
 };
 
