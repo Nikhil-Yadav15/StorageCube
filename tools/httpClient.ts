@@ -21,7 +21,6 @@ export function createHttpClient(params?: AxiosRequestConfig) {
   const httpClient: AxiosInstance = axios.create({
     baseURL: apiUrls.baseUrl,
     headers: {
-      "Access-Control-Allow-Origin": "*",
       "Content-Type": "application/json",
     },
     ...params,
@@ -37,7 +36,7 @@ export function createHttpClient(params?: AxiosRequestConfig) {
       }
       return config;
     },
-    (error) => Promise.reject(error)
+    (error) => Promise.reject(error),
   );
 
   // Response interceptor
@@ -70,7 +69,7 @@ export function createHttpClient(params?: AxiosRequestConfig) {
         hasError: true,
         status: error.response?.status || 500,
       });
-    }
+    },
   );
 
   // Define HTTP methods

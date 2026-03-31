@@ -1,6 +1,6 @@
+import { NextResponse } from "next/server";
 import User from "../../../../lib/models/user.model";
 import { utils } from "../../../../lib/utils/server-utils";
-import { cookies } from "next/headers";
 import connectDB from "../../../../lib/dbConnection";
 import { asyncHandler } from "../../../../lib/utils/asyncHandler";
 
@@ -37,7 +37,11 @@ const POST = asyncHandler(async (req) => {
     ? new Date(user.otpLastAttempt.getTime() + OTP_LOCKOUT_MINUTES * 60 * 1000)
     : null;
 
-  if (user.otpAttempts >= MAX_OTP_ATTEMPTS && lockoutExpiry && now < lockoutExpiry) {
+  if (
+    user.otpAttempts >= MAX_OTP_ATTEMPTS &&
+    lockoutExpiry &&
+    now < lockoutExpiry
+  ) {
     const minutesLeft = Math.ceil((lockoutExpiry - now) / 60000);
     return utils.responseHandler({
       message: `Too many attempts. Try again in ${minutesLeft} minute(s).`,
@@ -83,37 +87,38 @@ const POST = asyncHandler(async (req) => {
         otpAttempts: 0,
         otpLastAttempt: null,
       },
-    }
+    },
   );
 
   const loggedInUser = await User.findById(user._id).select(
-    "-password -emailVerificationToken -isEmailVerified -emailVerificationExpiry -refreshToken -createdAt -updatedAt -__v"
+    "-password -emailVerificationToken -isEmailVerified -emailVerificationExpiry -refreshToken -createdAt -updatedAt -__v",
   );
 
   const { accessToken, refreshToken } =
     await utils.generateAccessAndRefreshToken(user._id);
 
-  const options = {
+  const cookieOptions = {
     path: "/",
     httpOnly: true,
-    secure: true,
+    secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
   };
 
-  const cookieStore = await cookies();
-  cookieStore.set("accessToken", accessToken, options);
-  cookieStore.set("refreshToken", refreshToken, options);
-
-  return utils.responseHandler({
-    message: "OTP verified successfully",
-    status: 200,
-    success: true,
-    data: {
+  const response = NextResponse.json(
+    {
+      message: "OTP verified successfully",
+      success: true,
       accessToken,
       refreshToken,
       user: loggedInUser,
     },
-  });
+    { status: 200 },
+  );
+
+  response.cookies.set("accessToken", accessToken, cookieOptions);
+  response.cookies.set("refreshToken", refreshToken, cookieOptions);
+
+  return response;
 });
 
 export { POST };

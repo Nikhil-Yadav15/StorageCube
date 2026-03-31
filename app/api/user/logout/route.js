@@ -1,9 +1,17 @@
-import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 import User from "../../../../lib/models/user.model";
 import { asyncHandler } from "../../../../lib/utils/asyncHandler";
 import { verifyJWT } from "../../../../lib/middlewares/verifyJwt";
 import { utils } from "../../../../lib/utils/server-utils";
 import connectDB from "../../../../lib/dbConnection";
+
+const cookieOptions = {
+  path: "/",
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "strict",
+  expires: new Date(0),
+};
 
 export const POST = asyncHandler(
   verifyJWT(async (req) => {
@@ -19,17 +27,20 @@ export const POST = asyncHandler(
         },
         {
           new: true,
-        }
+        },
       );
-      const cookieStore = await cookies();
-      utils.clearCookies(cookieStore);
 
-      return utils.responseHandler({
+      const response = utils.responseHandler({
         message: "User logged out Successfully",
         status: 200,
         success: true,
         data: {},
       });
+
+      response.cookies.set("accessToken", "", cookieOptions);
+      response.cookies.set("refreshToken", "", cookieOptions);
+
+      return response;
     } catch (error) {
       return utils.responseHandler({
         message: error.message || "Internal Server Error while logging out",
@@ -37,5 +48,5 @@ export const POST = asyncHandler(
         success: false,
       });
     }
-  })
+  }),
 );

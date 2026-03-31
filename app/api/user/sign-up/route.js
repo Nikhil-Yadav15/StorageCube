@@ -5,78 +5,76 @@ import connectDB from "../../../../lib/dbConnection";
 import { asyncHandler } from "../../../../lib/utils/asyncHandler";
 
 export const POST = asyncHandler(async (req) => {
-    await connectDB();
+  await connectDB();
 
-    const { fullName, email } = await req.json();
+  const { fullName, email } = await req.json();
 
-    const isFieldEmpty = [fullName, email].some(
-      (field) => field?.trim() === ""
-    );
+  const isFieldEmpty = [fullName, email].some((field) => field?.trim() === "");
 
-    if (isFieldEmpty) {
-      return utils.responseHandler({
-        message: "All fields are required",
-        status: 400,
-        success: false,
-      });
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return utils.responseHandler({
-        message: "Invalid email format",
-        status: 400,
-        success: false,
-      });
-    }
-
-    const existedUser = await User.findOne({ email });
-
-    if (existedUser) {
-      return utils.responseHandler({
-        message: "User with email or username already exists",
-        status: 409,
-        success: false,
-      });
-    }
-
-    const otpDetails = await utils.sendEmailOTP(email, fullName);
-
-    if (!otpDetails) {
-      return utils.responseHandler({
-        message: "Something went wrong while sending OTP",
-        status: 500,
-        success: false,
-      });
-    }
-
-    const { otp, expiration } = otpDetails;
-
-    const user = await User.create({
-      fullName,
-      email,
-      avatar: avatarPlaceholderUrl,
-      emailVerificationToken: otp,
-      emailVerificationExpiry: expiration,
-      isEmailVerified: false,
-    });
-
-    const createdUser = await User.findById(user._id).select("-refreshToken");
-
-    if (!createdUser) {
-      return utils.responseHandler({
-        message: "Something went wrong while registering the user",
-        status: 500,
-        success: false,
-      });
-    }
-
+  if (isFieldEmpty) {
     return utils.responseHandler({
-      message: "OTP sent successfully",
-      status: 200,
-      success: true,
-      data: {
-        email: createdUser.email,
-      },
+      message: "All fields are required",
+      status: 400,
+      success: false,
     });
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return utils.responseHandler({
+      message: "Invalid email format",
+      status: 400,
+      success: false,
+    });
+  }
+
+  const existedUser = await User.findOne({ email });
+
+  if (existedUser) {
+    return utils.responseHandler({
+      message: "User already registered. Please sign in.",
+      status: 409,
+      success: false,
+    });
+  }
+
+  const otpDetails = await utils.sendEmailOTP(email, fullName);
+
+  if (!otpDetails) {
+    return utils.responseHandler({
+      message: "Something went wrong while sending OTP",
+      status: 500,
+      success: false,
+    });
+  }
+
+  const { otp, expiration } = otpDetails;
+
+  const user = await User.create({
+    fullName,
+    email,
+    avatar: avatarPlaceholderUrl,
+    emailVerificationToken: otp,
+    emailVerificationExpiry: expiration,
+    isEmailVerified: false,
+  });
+
+  const createdUser = await User.findById(user._id).select("-refreshToken");
+
+  if (!createdUser) {
+    return utils.responseHandler({
+      message: "Something went wrong while registering the user",
+      status: 500,
+      success: false,
+    });
+  }
+
+  return utils.responseHandler({
+    message: "OTP sent successfully",
+    status: 200,
+    success: true,
+    data: {
+      email: createdUser.email,
+    },
+  });
 });

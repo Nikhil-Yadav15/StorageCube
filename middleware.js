@@ -1,14 +1,13 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 const publicRoutes = ["/sign-in", "/sign-up"];
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
-  const accessToken = (await cookies()).get("accessToken");
+  const accessToken = request.cookies.get("accessToken");
   const isPublicRoute = publicRoutes.includes(pathname);
 
-  if (accessToken && accessToken?.value) {
+  if (accessToken?.value) {
     return isPublicRoute
       ? NextResponse.redirect(new URL("/", request.url))
       : NextResponse.next();
@@ -25,6 +24,6 @@ export const config = {
     "/sign-up",
     "/profile",
     "/",
-    "/:type(images|documents|media|others)*", 
+    "/:type(images|documents|media|others)*",
   ],
 };

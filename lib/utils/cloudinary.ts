@@ -16,15 +16,21 @@ const uploadOnCloudinary = async (file: File) => {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Extract the file name without extension
-    const originalFileName = file.name.replace(/\.[^/.]+$/, "");
+    // Extract the file name without extension and sanitize
+    const originalFileName = file.name
+      .replace(/\.[^/.]+$/, "")
+      .replace(/[^a-zA-Z0-9_-]/g, "_")
+      .slice(0, 200);
+
+    // Add timestamp to prevent duplicate public_ids
+    const publicId = `${originalFileName}_${Date.now()}`;
 
     // Convert to Base64
     const base64Data = `data:${file.type};base64,${buffer.toString("base64")}`;
 
     const response = await cloudinary.uploader.upload(base64Data, {
       resource_type: "auto",
-      public_id: originalFileName,
+      public_id: publicId,
       folder: "cloud-store",
     });
 
