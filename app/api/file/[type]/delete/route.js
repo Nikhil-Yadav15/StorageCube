@@ -33,7 +33,7 @@ export const DELETE = asyncHandler(
 
       if (!result) {
         return utils.responseHandler({
-          message: "Something went wrong while deleting a video",
+          message: "Something went wrong while deleting the file",
           status: 500,
           success: false,
         });
@@ -55,7 +55,7 @@ export const DELETE = asyncHandler(
             },
           },
         ],
-        { returnDocument: "after" }
+        { returnDocument: "after" },
       );
 
       return utils.responseHandler({
@@ -70,5 +70,5 @@ export const DELETE = asyncHandler(
         success: false,
       });
     }
-  })
+  }),
 );

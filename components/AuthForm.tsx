@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { Loader } from "@/public/assets";
 import Link from "next/link";
 import OTPModal from "./OTPModal";
@@ -40,6 +41,7 @@ const AuthForm = ({ type }: Props) => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [showOTP, setShowOTP] = useState(false);
+  const router = useRouter();
 
   const { toast } = useToast();
 
@@ -69,8 +71,17 @@ const AuthForm = ({ type }: Props) => {
         setShowOTP(true);
       }
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 
-        (error && typeof error === "object" && "message" in error) ? String((error as {message: string}).message) : undefined;
+      const message =
+        error instanceof Error
+          ? error.message
+          : error && typeof error === "object" && "message" in error
+            ? String((error as { message: string }).message)
+            : undefined;
+      const status =
+        error && typeof error === "object" && "status" in error
+          ? (error as { status: number }).status
+          : undefined;
+
       toast({
         description: (
           <p className="body-2 text-white">
@@ -79,6 +90,12 @@ const AuthForm = ({ type }: Props) => {
         ),
         className: "error-toast",
       });
+
+      if (type === "sign-up" && status === 409) {
+        setTimeout(() => router.push("/sign-in"), 1500);
+      } else if (type === "sign-in" && status === 404) {
+        setTimeout(() => router.push("/sign-up"), 1500);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -98,7 +115,9 @@ const AuthForm = ({ type }: Props) => {
               render={({ field }) => (
                 <FormItem>
                   <div className="shad-form-item">
-                    <FormLabel className="shad-form-label ">Full Name</FormLabel>
+                    <FormLabel className="shad-form-label ">
+                      Full Name
+                    </FormLabel>
 
                     <FormControl>
                       <Input
@@ -167,9 +186,7 @@ const AuthForm = ({ type }: Props) => {
         </form>
       </Form>
 
-      {showOTP && (
-        <OTPModal email={form.getValues("email")} accountId={null} />
-      )}
+      {showOTP && <OTPModal email={form.getValues("email")} accountId={null} />}
     </>
   );
 };
