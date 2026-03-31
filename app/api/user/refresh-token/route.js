@@ -1,25 +1,39 @@
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 import User from "../../../../lib/models/user.model";
 import { asyncHandler } from "../../../../lib/utils/asyncHandler";
 import { utils } from "../../../../lib/utils/server-utils";
 import { mongodbConfig } from "../../../../lib/dbConnection/config";
 import connectDB from "../../../../lib/dbConnection";
 
+const cookieOptions = {
+  path: "/",
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "strict",
+};
+
 export const POST = asyncHandler(async (req) => {
   const cookieStore = await cookies();
 
-  const incomingRefreshToken =
-    cookieStore.get("refreshToken")?.value;
+  const incomingRefreshToken = cookieStore.get("refreshToken")?.value;
 
   if (!incomingRefreshToken) {
-    cookieStore.delete("accessToken");
-    cookieStore.delete("refreshToken");
-    return utils.responseHandler({
+    const response = utils.responseHandler({
       message: "unauthorized request",
       status: 401,
       success: false,
     });
+    response.cookies.set("accessToken", "", {
+      ...cookieOptions,
+      expires: new Date(0),
+    });
+    response.cookies.set("refreshToken", "", {
+      ...cookieOptions,
+      expires: new Date(0),
+    });
+    return response;
   }
 
   try {
@@ -27,7 +41,7 @@ export const POST = asyncHandler(async (req) => {
 
     const decodedToken = jwt.verify(
       incomingRefreshToken,
-      mongodbConfig.refreshTokenSecret
+      mongodbConfig.refreshTokenSecret,
     );
 
     const user = await User.findById(decodedToken?._id);
@@ -41,42 +55,51 @@ export const POST = asyncHandler(async (req) => {
     }
 
     if (incomingRefreshToken !== user?.refreshToken) {
-      cookieStore.delete("accessToken");
-      cookieStore.delete("refreshToken");
-      return utils.responseHandler({
+      const response = utils.responseHandler({
         message: "Refresh token is expired or used",
         status: 401,
         success: false,
       });
+      response.cookies.set("accessToken", "", {
+        ...cookieOptions,
+        expires: new Date(0),
+      });
+      response.cookies.set("refreshToken", "", {
+        ...cookieOptions,
+        expires: new Date(0),
+      });
+      return response;
     }
-
-    const options = {
-      path: "/",
-      httpOnly: true,
-      secure: true,
-      sameSite: "strict",
-    };
 
     const { accessToken, refreshToken } =
       await utils.generateAccessAndRefreshToken(user._id);
 
-    cookieStore.set("accessToken", accessToken, options);
-    cookieStore.set("refreshToken", refreshToken, options);
-
-    return utils.responseHandler({
+    const response = utils.responseHandler({
       message: "Access token refreshed Successfully",
       status: 200,
       success: true,
       data: { accessToken, refreshToken },
     });
+
+    response.cookies.set("accessToken", accessToken, cookieOptions);
+    response.cookies.set("refreshToken", refreshToken, cookieOptions);
+
+    return response;
   } catch (error) {
-    cookieStore.delete("accessToken");
-    cookieStore.delete("refreshToken");
     console.error(error);
-    return utils.responseHandler({
+    const response = utils.responseHandler({
       message: "Something went wrong while refreshing access token!",
       status: 500,
       success: false,
     });
+    response.cookies.set("accessToken", "", {
+      ...cookieOptions,
+      expires: new Date(0),
+    });
+    response.cookies.set("refreshToken", "", {
+      ...cookieOptions,
+      expires: new Date(0),
+    });
+    return response;
   }
 });

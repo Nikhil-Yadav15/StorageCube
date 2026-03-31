@@ -25,13 +25,13 @@ const FileUploader = ({ className }: Props) => {
     async (acceptedFiles: File[]) => {
       setFiles((prevFiles) => [...prevFiles, ...acceptedFiles]);
 
-      acceptedFiles.forEach(async (file) => {
+      for (const file of acceptedFiles) {
         if (file.size > MAX_FILE_SIZE) {
           setFiles((prevFiles) =>
-            prevFiles.filter((f) => f.name !== file.name)
+            prevFiles.filter((f) => f.name !== file.name),
           );
 
-          return toast({
+          toast({
             description: (
               <p className="body-2 text-white">
                 <span className="font-semibold">{file.name}</span> is too large.
@@ -40,12 +40,13 @@ const FileUploader = ({ className }: Props) => {
             ),
             className: "error-toast",
           });
+          continue;
         }
 
         await onUploadFile(file);
-      });
+      }
     },
-    [path, files]
+    [path],
   );
 
   const { getRootProps, getInputProps } = useDropzone({ onDrop });
@@ -82,7 +83,7 @@ const FileUploader = ({ className }: Props) => {
 
   const onRemoveFile = (
     e: MouseEvent<HTMLImageElement, globalThis.MouseEvent>,
-    fileName: string
+    fileName: string,
   ) => {
     e.stopPropagation();
     const abortController = abortControllers.current.get(fileName);
